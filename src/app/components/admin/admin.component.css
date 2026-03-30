@@ -423,3 +423,84 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); curso
   .casa-detalle { margin-top: 0.75rem; }
 
 }
+/* ── Agregar al final de admin.component.css ── */
+
+.tab-badge {
+  background: #ff4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.status.pendiente {
+  background: rgba(255, 200, 0, 0.15);
+  color: #ffc800;
+  border: 1px solid rgba(255, 200, 0, 0.3);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  width: 100%; max-width: 420px;
+  border-top: 3px solid #FF6B00;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.2rem 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-white); }
+
+.modal-body { padding: 1.2rem; }
+
+.modal-info { font-size: 0.9rem; color: var(--text-white); margin-bottom: 4px; }
+.modal-info.gray { color: var(--text-gray); font-size: 0.82rem; }
+
+.modal-hint {
+  font-size: 0.78rem; color: var(--text-gray);
+  margin-top: 8px; line-height: 1.4;
+}
+
+.modal-body .form-group label {
+  display: block; color: #FF6B00;
+  font-size: 0.82rem; font-weight: 600; margin-bottom: 5px;
+}
+
+.modal-body input {
+  width: 100%; padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px; color: var(--text-white);
+  font-size: 0.92rem; outline: none;
+  transition: border-color 0.2s;
+}
+.modal-body input:focus { border-color: #00E676; }
+.modal-body input.input-error { border-color: #ff4444; }
+.modal-body .error-msg { color: #ff4444; font-size: 0.75rem; margin-top: 3px; display: block; }
+
+.modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 0.8rem 1.2rem 1.2rem;
+}

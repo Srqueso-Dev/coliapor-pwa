@@ -18,19 +18,17 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   private firestore = inject(Firestore);
   private toast     = inject(ToastService);
 
-  nombre       = '';
-  zona         = '';
-  uid          = '';
-  cargando     = true;
+  nombre   = '';
+  zona     = '';
+  uid      = '';
+  rol      = '';
+  cargando = true;
 
-  // Datos del camión asignado (vienen del ESP32 vía Firestore)
   camion: any       = null;
   private unsubCamion: (() => void) | null = null;
 
-  // Próximas fechas de recolección de su zona
   fechasZona: any[] = [];
 
-  // Mapa de ruta
   private mapa!: L.Map;
   private pinRecolector!: L.Marker;
   mapaActivo = false;
@@ -41,12 +39,17 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       this.uid = user.uid;
 
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      if (!snap.exists() || snap.data()['rol'] !== 'recolector') {
+      if (!snap.exists()) { window.location.href = '/login'; return; }
+
+      const data = snap.data();
+      this.rol = data['rol'] || '';
+
+      // Solo admin y recolector pueden entrar
+      if (this.rol !== 'recolector' && this.rol !== 'admin') {
         window.location.href = '/dashboard';
         return;
       }
 
-      const data = snap.data();
       this.nombre = data['nombre'] || '';
       this.zona   = data['zona']   || '';
 
@@ -65,24 +68,20 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   }
 
   async cargarCamion(uid: string) {
-    // Escuchar en tiempo real el camión asignado a este recolector
     const snap = await getDocs(query(
       collection(this.firestore, 'camiones'),
       where('recolectorId', '==', uid)
     ));
-
     if (snap.empty) { this.camion = null; return; }
 
     const camionDoc = snap.docs[0];
-    // Suscripción en tiempo real para ver peso y volumen actualizados por el ESP32
-    this.unsubCamion = onSnapshot(doc(this.firestore, 'camiones', camionDoc.id), snap => {
-      if (snap.exists()) {
-        this.camion = { id: snap.id, ...snap.data() };
-      }
+    this.unsubCamion = onSnapshot(doc(this.firestore, 'camiones', camionDoc.id), s => {
+      if (s.exists()) this.camion = { id: s.id, ...s.data() };
     });
   }
 
   async cargarFechasZona() {
+    if (!this.zona) return;
     const hoy  = new Date().toISOString().split('T')[0];
     const snap = await getDocs(collection(this.firestore, 'fechasRecoleccion'));
     this.fechasZona = snap.docs
@@ -121,7 +120,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap', maxZoom: 21
     }).addTo(this.mapa);
 
-    // Pin del recolector con geolocalización
     if (navigator.geolocation) {
       navigator.geolocation.watchPosition(pos => {
         const lat = pos.coords.latitude;

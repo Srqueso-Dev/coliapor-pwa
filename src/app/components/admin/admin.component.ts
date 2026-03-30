@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Auth, signOut, createUserWithEmailAndPassword, sendEmailVerification } from '@angular/fire/auth';
 import { Firestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, setDoc, addDoc, query, orderBy } from '@angular/fire/firestore';
 import * as L from 'leaflet';
@@ -10,7 +10,7 @@ import { ToastService } from '../toast/toast.service';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css'
 })
@@ -22,11 +22,11 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   seccionActiva = 'usuarios';
 
-  usuarios: any[]              = [];
-  recolectores: any[]          = [];
-  fechas: any[]                = [];
-  pagos: any[]                 = [];
-  solicitudes: any[]           = [];
+  usuarios: any[]    = [];
+  recolectores: any[] = [];
+  fechas: any[]      = [];
+  pagos: any[]       = [];
+  solicitudes: any[] = [];
 
   cargando = false;
 
@@ -51,11 +51,11 @@ export class AdminComponent implements OnInit, OnDestroy {
   editandoFecha: any = null;
   montoActual = 0;
 
-  // ── Modal aprobación recolector ──────────────────────
-  modalSolicitud: any     = null;
-  passwordTemporal        = '';
-  passwordError           = '';
-  aprobando               = false;
+  // ── Modal aprobación ──────────────────────────────────
+  modalSolicitud: any  = null;
+  passwordTemporal     = '';
+  passwordError        = '';
+  aprobando            = false;
 
   // ── Mapa ──────────────────────────────────────────────
   private mapa!: L.Map;
@@ -116,11 +116,10 @@ export class AdminComponent implements OnInit, OnDestroy {
   }
 
   async cargarFechas() {
-    const snap = await getDocs(query(collection(this.firestore, 'fechasRecoleccion'), orderBy('fecha')));
-    const hoy  = new Date().toISOString().split('T')[0];
+    const snap  = await getDocs(query(collection(this.firestore, 'fechasRecoleccion'), orderBy('fecha')));
+    const hoy   = new Date().toISOString().split('T')[0];
     const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const pasadas = todas.filter((f: any) => f.fecha < hoy);
-    for (const f of pasadas) {
+    for (const f of todas.filter((f: any) => f.fecha < hoy)) {
       await deleteDoc(doc(this.firestore, 'fechasRecoleccion', f.id));
     }
     this.fechas = todas.filter((f: any) => f.fecha >= hoy);
@@ -218,76 +217,52 @@ export class AdminComponent implements OnInit, OnDestroy {
     } catch { this.toast.error('Error al resetear el onboarding.'); }
   }
 
-  // ── Solicitudes de recolectores ───────────────────────
+  // ── Solicitudes ───────────────────────────────────────
   abrirModalAprobar(solicitud: any) {
-    this.modalSolicitud  = solicitud;
+    this.modalSolicitud   = solicitud;
     this.passwordTemporal = '';
-    this.passwordError   = '';
+    this.passwordError    = '';
   }
 
   cerrarModal() {
-    this.modalSolicitud  = null;
+    this.modalSolicitud   = null;
     this.passwordTemporal = '';
-    this.passwordError   = '';
+    this.passwordError    = '';
   }
 
   async aprobarSolicitud() {
     if (!this.passwordTemporal || this.passwordTemporal.length < 6) {
-      this.passwordError = 'La contraseña debe tener al menos 6 caracteres.';
+      this.passwordError = 'Mínimo 6 caracteres.';
       return;
     }
     this.aprobando = true;
     const s = this.modalSolicitud;
     try {
-      // Guardar el auth actual del admin
-      const adminUser = this.auth.currentUser;
-
-      // Crear cuenta en Firebase Auth
       const credencial = await createUserWithEmailAndPassword(this.auth, s.email, this.passwordTemporal);
       await sendEmailVerification(credencial.user);
 
-      // Crear documento en Firestore
       await setDoc(doc(this.firestore, 'usuarios', credencial.user.uid), {
-        nombre:         s.nombre,
-        telefono:       s.telefono,
-        email:          s.email,
-        zona:           s.zona,
-        licencia:       s.licencia,
-        rol:            'recolector',
-        activo:         true,
-        perfilCompleto: true,
-        creadoEn:       new Date()
+        nombre: s.nombre, telefono: s.telefono, email: s.email,
+        zona: s.zona, licencia: s.licencia,
+        rol: 'recolector', activo: true, perfilCompleto: true, creadoEn: new Date()
       });
 
-      // También guardar en colección recolectores
       await addDoc(collection(this.firestore, 'recolectores'), {
-        uid:      credencial.user.uid,
-        nombre:   s.nombre,
-        telefono: s.telefono,
-        email:    s.email,
-        zona:     s.zona,
-        activo:   true,
-        creadoEn: new Date()
+        uid: credencial.user.uid, nombre: s.nombre, telefono: s.telefono,
+        email: s.email, zona: s.zona, activo: true, creadoEn: new Date()
       });
 
-      // Actualizar solicitud como aprobada
-      await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), {
-        estado: 'aprobada'
-      });
+      await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), { estado: 'aprobada' });
 
-      // El admin queda deslogueado porque createUserWithEmailAndPassword cambia el usuario activo
-      // Necesitamos volver a loguear al admin — como no podemos hacerlo sin contraseña,
-      // simplemente redirigimos al login con un mensaje
-      this.toast.ok(`Recolector ${s.nombre} aprobado. Se enviará el correo de verificación. Vuelve a iniciar sesión.`);
+      this.cerrarModal();
+      this.toast.ok(`${s.nombre} aprobado. Se enviará verificación por correo. Vuelve a iniciar sesión.`);
       setTimeout(() => { window.location.href = '/login'; }, 3000);
-
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        this.toast.error('Este correo ya tiene una cuenta registrada.');
+        this.toast.error('Este correo ya tiene una cuenta.');
       } else {
         this.toast.error('Error al crear la cuenta. Intenta de nuevo.');
       }
-    } finally {
       this.aprobando = false;
       this.cerrarModal();
     }

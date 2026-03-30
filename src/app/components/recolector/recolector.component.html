@@ -2,11 +2,18 @@
 
   <!-- NAVBAR -->
   <nav class="navbar">
+    @if (rol === 'admin') {
+      <a routerLink="/admin" class="btn-back">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </a>
+    }
     <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
-    <span class="rol-badge">RECOLECTOR</span>
-    <button class="btn-logout" (click)="cerrarSesion()">
-      <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-    </button>
+    <span class="rol-badge">{{ rol === 'admin' ? 'ADMIN — VISTA RECOLECTOR' : 'RECOLECTOR' }}</span>
+    @if (rol !== 'admin') {
+      <button class="btn-logout" (click)="cerrarSesion()">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+      </button>
+    }
   </nav>
 
   @if (cargando) {
@@ -17,7 +24,9 @@
 
       <!-- BIENVENIDA -->
       <div class="bienvenida">
-        <h1 class="bienvenida-nombre">Hola, {{ nombre }}</h1>
+        <h1 class="bienvenida-nombre">
+          @if (rol === 'admin') { Vista de recolector } @else { Hola, {{ nombre }} }
+        </h1>
         <p class="bienvenida-zona">Zona asignada: <strong>{{ zona || '—' }}</strong></p>
       </div>
 
@@ -26,7 +35,7 @@
         <h2 class="section-title">Mi Camión</h2>
 
         @if (!camion) {
-          <p class="empty-msg">No tienes un camión asignado aún. Contacta al administrador.</p>
+          <p class="empty-msg">No hay un camión asignado aún.</p>
         } @else {
           <div class="camion-info">
             <div class="camion-header">
@@ -37,20 +46,21 @@
                 <p class="camion-placa">{{ camion.placa || '—' }}</p>
                 <p class="camion-modelo">{{ camion.modelo || '—' }}</p>
               </div>
-              <span class="estado-badge" [style.background]="estadoCamionColor + '22'" [style.color]="estadoCamionColor" [style.border-color]="estadoCamionColor">
+              <span class="estado-badge"
+                [style.background]="estadoCamionColor + '22'"
+                [style.color]="estadoCamionColor"
+                [style.border-color]="estadoCamionColor">
                 {{ estadoCamionLabel }}
               </span>
             </div>
 
             <div class="sensores-grid">
-              <!-- PESO -->
               <div class="sensor-card">
                 <div class="sensor-label">Peso actual</div>
                 <div class="sensor-valor naranja">{{ camion.pesoActual ?? '—' }} <span>kg</span></div>
                 <div class="sensor-sub">Actualizado en tiempo real</div>
               </div>
 
-              <!-- CONTENEDOR LLENO -->
               <div class="sensor-card">
                 <div class="sensor-label">Contenedor</div>
                 @if (camion.contenedorLleno === true) {
@@ -70,18 +80,20 @@
               </div>
             </div>
 
-            @if (camion.ultimaActualizacion) {
-              <p class="ultima-act">Última actualización del sensor: {{ camion.ultimaActualizacion?.toDate ? (camion.ultimaActualizacion.toDate() | date:'dd/MM/yyyy HH:mm') : '—' }}</p>
+            @if (camion.ultimaActualizacion?.toDate) {
+              <p class="ultima-act">
+                Última actualización: {{ camion.ultimaActualizacion.toDate() | date:'dd/MM/yyyy HH:mm' }}
+              </p>
             }
           </div>
         }
       </div>
 
-      <!-- PRÓXIMAS RECOLECCIONES DE SU ZONA -->
+      <!-- PRÓXIMAS RECOLECCIONES -->
       <div class="section-card">
         <h2 class="section-title">Próximas Recolecciones</h2>
         @if (fechasZona.length === 0) {
-          <p class="empty-msg">No hay fechas programadas para tu zona.</p>
+          <p class="empty-msg">No hay fechas programadas para esta zona.</p>
         } @else {
           <div class="fechas-list">
             @for (f of fechasZona; track f.id) {
@@ -100,7 +112,7 @@
         }
       </div>
 
-      <!-- MAPA DE RUTA -->
+      <!-- MAPA -->
       <div class="section-card">
         <div class="mapa-header">
           <h2 class="section-title">Mi Ubicación</h2>
