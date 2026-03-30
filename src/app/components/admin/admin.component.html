@@ -1,0 +1,424 @@
+<div class="admin-wrapper">
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
+      <span class="admin-badge">ADMIN</span>
+    </div>
+
+    <div class="navbar-tabs">
+      <button class="tab" [class.active]="seccionActiva === 'usuarios'" (click)="setSeccion('usuarios')">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        <span>Usuarios</span>
+      </button>
+      <button class="tab" [class.active]="seccionActiva === 'recolectores'" (click)="setSeccion('recolectores')">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+        <span>Recolectores</span>
+      </button>
+      <button class="tab" [class.active]="seccionActiva === 'fechas'" (click)="setSeccion('fechas')">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+        <span>Fechas</span>
+      </button>
+      <button class="tab" [class.active]="seccionActiva === 'pagos'" (click)="setSeccion('pagos')">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+        <span>Pagos</span>
+      </button>
+      <button class="tab" [class.active]="seccionActiva === 'mapa'" (click)="setSeccion('mapa')">
+        <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+        <span>Mapa</span>
+      </button>
+    </div>
+
+    <div class="nav-actions">
+      <a routerLink="/dashboard" class="btn-volver">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        Volver
+      </a>
+      <button class="btn-logout" (click)="cerrarSesion()">
+        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        Salir
+      </button>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    @if (seccionActiva === 'usuarios') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Gestión de Usuarios</h2>
+          <span class="badge">{{ usuarios.length }} usuarios</span>
+        </div>
+
+        @if (cargando) {
+          <div class="loading">Cargando...</div>
+        } @else if (usuarios.length === 0) {
+          <div class="empty">No hay usuarios registrados aún.</div>
+        } @else {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Teléfono</th>
+                  <th>Estado</th>
+                  <th>Onboarding</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of usuarios; track u.id) {
+                  <tr [class.inactivo]="u.activo === false">
+                    <td data-label="Nombre">{{ u.nombre || '—' }}</td>
+                    <td data-label="Correo">{{ u.email || '—' }}</td>
+                    <td data-label="Teléfono">{{ u.telefono || '—' }}</td>
+                    <td data-label="Estado">
+                      @if (u.activo === false) {
+                        <span class="status inactivo">Inactivo</span>
+                      } @else {
+                        <span class="status activo">Activo</span>
+                      }
+                    </td>
+                    <td data-label="Onboarding">
+                      <button class="btn-sm orange" (click)="resetOnboarding(u.id)">Re-onboarding</button>
+                    </td>
+                    <td data-label="Acción">
+                      @if (u.activo === false) {
+                        <button class="btn-sm green" (click)="reactivar(u.id)">Reactivar</button>
+                      } @else {
+                        <button class="btn-sm red" (click)="darDeBaja(u.id)">Dar de baja</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    @if (seccionActiva === 'recolectores') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Gestión de Recolectores</h2>
+          <span class="badge">{{ recolectores.length }} recolectores</span>
+        </div>
+
+        <div class="form-card">
+          <h3>Agregar Recolector</h3>
+          <form [formGroup]="formRecolector">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nombre Completo</label>
+                <input formControlName="nombre" type="text" placeholder="Nombre del recolector"
+                  [class.input-error]="formRecolector.get('nombre')?.invalid && formRecolector.get('nombre')?.touched">
+                @if (formRecolector.get('nombre')?.invalid && formRecolector.get('nombre')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Teléfono</label>
+                <input formControlName="telefono" type="tel" placeholder="10 dígitos"
+                  [class.input-error]="formRecolector.get('telefono')?.invalid && formRecolector.get('telefono')?.touched">
+                @if (formRecolector.get('telefono')?.invalid && formRecolector.get('telefono')?.touched) {
+                  <span class="error-msg">10 dígitos requeridos.</span>
+                }
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Correo</label>
+                <input formControlName="email" type="email" placeholder="correo@ejemplo.com"
+                  [class.input-error]="formRecolector.get('email')?.invalid && formRecolector.get('email')?.touched">
+                @if (formRecolector.get('email')?.invalid && formRecolector.get('email')?.touched) {
+                  <span class="error-msg">Correo válido requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Zona</label>
+                <input formControlName="zona" type="text" placeholder="Ej. Zona Norte"
+                  [class.input-error]="formRecolector.get('zona')?.invalid && formRecolector.get('zona')?.touched">
+                @if (formRecolector.get('zona')?.invalid && formRecolector.get('zona')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+            </div>
+            <button class="btn-primary" (click)="agregarRecolector()" [disabled]="cargando">
+              @if (cargando) { Guardando... } @else { + AGREGAR RECOLECTOR }
+            </button>
+          </form>
+        </div>
+
+        @if (recolectores.length === 0) {
+          <div class="empty">No hay recolectores registrados aún.</div>
+        } @else {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                  <th>Correo</th>
+                  <th>Zona</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of recolectores; track r.id) {
+                  <tr>
+                    <td data-label="Nombre">{{ r.nombre }}</td>
+                    <td data-label="Teléfono">{{ r.telefono }}</td>
+                    <td data-label="Correo">{{ r.email }}</td>
+                    <td data-label="Zona"><span class="zona-badge">{{ r.zona }}</span></td>
+                    <td data-label="Acción">
+                      <button class="btn-sm red" (click)="eliminarRecolector(r.id)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    @if (seccionActiva === 'fechas') {
+      <div class="section">
+        <div class="section-header">
+          <h2>Fechas de Recolección</h2>
+          <span class="badge">{{ fechas.length }} fechas</span>
+        </div>
+
+        <div class="form-card">
+          <h3>{{ editandoFecha ? 'Editar Fecha' : 'Agregar Fecha' }}</h3>
+          <form [formGroup]="formFecha">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fecha</label>
+                <input formControlName="fecha" type="date"
+                  [class.input-error]="formFecha.get('fecha')?.invalid && formFecha.get('fecha')?.touched">
+                @if (formFecha.get('fecha')?.invalid && formFecha.get('fecha')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Hora</label>
+                <input formControlName="hora" type="time"
+                  [class.input-error]="formFecha.get('hora')?.invalid && formFecha.get('hora')?.touched">
+                @if (formFecha.get('hora')?.invalid && formFecha.get('hora')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Zona</label>
+                <input formControlName="zona" type="text" placeholder="Ej. Zona Norte"
+                  [class.input-error]="formFecha.get('zona')?.invalid && formFecha.get('zona')?.touched">
+                @if (formFecha.get('zona')?.invalid && formFecha.get('zona')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Descripción (opcional)</label>
+                <input formControlName="descripcion" type="text" placeholder="Notas adicionales">
+              </div>
+            </div>
+            <div class="form-actions">
+              @if (editandoFecha) {
+                <button class="btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
+              }
+              <button class="btn-primary" (click)="guardarFecha()" [disabled]="cargando">
+                @if (cargando) { Guardando... } @else if (editandoFecha) { ACTUALIZAR FECHA } @else { + AGREGAR FECHA }
+              </button>
+            </div>
+          </form>
+        </div>
+
+        @if (fechas.length === 0) {
+          <div class="empty">No hay fechas registradas aún.</div>
+        } @else {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Zona</th>
+                  <th>Descripción</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of fechas; track f.id) {
+                  <tr>
+                    <td data-label="Fecha">{{ f.fecha }}</td>
+                    <td data-label="Hora">{{ f.hora }}</td>
+                    <td data-label="Zona"><span class="zona-badge">{{ f.zona }}</span></td>
+                    <td data-label="Descripción">{{ f.descripcion || '—' }}</td>
+                    <td data-label="Acciones" class="acciones">
+                      <button class="btn-sm orange" (click)="editarFecha(f)">Editar</button>
+                      <button class="btn-sm red" (click)="eliminarFecha(f.id)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    @if (seccionActiva === 'pagos') {
+      <div class="section">
+
+        <div class="section-header">
+          <h2>Configuración de Cobro</h2>
+        </div>
+
+        <div class="form-card">
+          <h3>Monto Mensual del Servicio</h3>
+          <p class="form-hint">Este monto se mostrará a todos los usuarios al momento de pagar.</p>
+          <form [formGroup]="formMonto">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Monto en MXN</label>
+                <input formControlName="monto" type="number" min="1" placeholder="Ej. 150"
+                  [class.input-error]="formMonto.get('monto')?.invalid && formMonto.get('monto')?.touched">
+                @if (formMonto.get('monto')?.invalid && formMonto.get('monto')?.touched) {
+                  <span class="error-msg">Ingresa un monto válido mayor a 0.</span>
+                }
+              </div>
+              <div class="form-group monto-actual">
+                <label>Monto actual</label>
+                <p class="monto-valor">${{ montoActual | number:'1.2-2' }} MXN</p>
+              </div>
+            </div>
+            <button class="btn-primary" (click)="guardarMonto()" [disabled]="cargando">
+              @if (cargando) { Guardando... } @else { GUARDAR MONTO }
+            </button>
+          </form>
+        </div>
+
+        <div class="section-header" style="margin-top: 2rem">
+          <h2>Ganancias</h2>
+          <span class="badge">{{ pagos.length }} pagos</span>
+        </div>
+
+        <div class="ganancias-grid">
+          <div class="ganancia-card naranja">
+            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+            <div>
+              <p class="ganancia-label">Total acumulado</p>
+              <p class="ganancia-valor">${{ totalGanancias | number:'1.2-2' }} MXN</p>
+            </div>
+          </div>
+          <div class="ganancia-card verde">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            <div>
+              <p class="ganancia-label">{{ mesActualStr }}</p>
+              <p class="ganancia-valor">${{ (pagosMesActual.length * montoActual) | number:'1.2-2' }} MXN</p>
+            </div>
+          </div>
+        </div>
+
+        @if (pagos.length === 0) {
+          <div class="empty">Aún no hay pagos registrados.</div>
+        } @else {
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Mes</th>
+                  <th>Fecha</th>
+                  <th>Método</th>
+                  <th>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of pagos; track p.id) {
+                  <tr>
+                    <td data-label="Usuario">{{ p.nombre || '—' }}</td>
+                    <td data-label="Mes">{{ p.mes }}</td>
+                    <td data-label="Fecha">{{ p.fecha }}</td>
+                    <td data-label="Método">{{ p.metodo }}</td>
+                    <td data-label="Monto" class="monto-cell">${{ p.monto | number:'1.2-2' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+      </div>
+    }
+
+    @if (seccionActiva === 'mapa') {
+      <div class="section mapa-section">
+        <div class="section-header">
+          <h2>Mapa de Casas</h2>
+          <div class="mapa-leyenda">
+            <span class="leyenda-item"><span class="dot verde"></span> Pagó este mes</span>
+            <span class="leyenda-item"><span class="dot naranja"></span> Pago pendiente</span>
+          </div>
+        </div>
+
+        <p class="mapa-hint">Acerca el mapa a zoom 18+ para ver los polígonos de cada casa</p>
+
+        <div id="mapa-admin"></div>
+
+        @if (usuariosGeo.length === 0) {
+          <div class="empty">No hay usuarios con coordenadas registradas aún.</div>
+        }
+
+        @if (casaSeleccionada) {
+          <div class="casa-detalle">
+            <div class="casa-detalle-header">
+              <h3>Detalle de la casa</h3>
+              <button class="btn-cerrar" (click)="cerrarDetalle()">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            </div>
+            <div class="casa-detalle-body">
+              <div class="detalle-row">
+                <span class="detalle-label">Titular</span>
+                <span class="detalle-valor">{{ casaSeleccionada.nombre || '—' }}</span>
+              </div>
+              <div class="detalle-row">
+                <span class="detalle-label">Tipo</span>
+                <span class="detalle-valor">{{ casaSeleccionada.tipoUsuario || '—' }}</span>
+              </div>
+              <div class="detalle-row">
+                <span class="detalle-label">Dirección</span>
+                <span class="detalle-valor">
+                  {{ casaSeleccionada.domicilio?.calle }} {{ casaSeleccionada.domicilio?.numero }},
+                  {{ casaSeleccionada.domicilio?.colonia }}
+                </span>
+              </div>
+              <div class="detalle-row">
+                <span class="detalle-label">Pago {{ mesActualStr }}</span>
+                <span class="detalle-valor"
+                  [class.pagado-txt]="casaSeleccionada.pagado"
+                  [class.pendiente-txt]="!casaSeleccionada.pagado">
+                  {{ casaSeleccionada.pagado ? 'Realizado' : 'Pendiente' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+
+  </main>
+
+  <footer class="footer">
+    <p class="footer-title">Realizado por</p>
+    <p class="footer-dev">Cristian Yael Oñate Ramírez</p>
+    <p class="footer-dev">Fernando Daniel Díaz Murguia</p>
+  </footer>
+
+</div>

@@ -1,0 +1,254 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-container {
+  min-height: 100vh;
+  background-color: var(--dark-bg);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-white);
+  transition: background-color 0.3s;
+}
+
+/* NAVBAR */
+.navbar {
+  position: sticky; top: 0;
+  background: var(--card-bg);
+  border-bottom: 2px solid var(--primary-orange);
+  display: flex; align-items: center;
+  padding: 0 1rem; height: 60px; gap: 12px;
+  z-index: 10; transition: background-color 0.3s;
+}
+
+.btn-back {
+  background: none; border: none; cursor: pointer;
+  padding: 6px; display: flex; align-items: center; text-decoration: none;
+}
+
+.btn-back svg { width: 24px; height: 24px; fill: var(--text-white); }
+.navbar-title { font-size: 1.1rem; font-weight: 700; color: var(--text-white); }
+
+/* Contenido */
+.content { padding: 1.5rem; max-width: 520px; margin: 0 auto; }
+
+/* Loading */
+.loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 4rem; gap: 1rem; color: var(--text-gray);
+}
+
+.spinner {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-orange);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Calendario */
+.calendar-card {
+  background: var(--card-bg);
+  border-radius: 16px; padding: 1.2rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+  transition: background-color 0.3s;
+}
+
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.mes-titulo {
+  font-size: 1.1rem; font-weight: 700;
+  color: var(--text-white); text-transform: capitalize;
+}
+
+.btn-mes {
+  background: var(--input-bg); border: 1px solid var(--border-color);
+  border-radius: 8px; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.btn-mes svg { width: 20px; height: 20px; fill: var(--text-white); }
+.btn-mes:hover { border-color: var(--primary-orange); }
+
+/* Grid */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.header-grid { margin-bottom: 6px; }
+
+.dia-semana {
+  text-align: center; font-size: 0.72rem;
+  font-weight: 700; color: var(--text-gray);
+  text-transform: uppercase; padding: 4px 0;
+}
+
+.dia {
+  aspect-ratio: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-radius: 8px; cursor: default;
+  position: relative; gap: 2px;
+  transition: background 0.2s;
+  min-height: 38px;
+}
+
+.dia.vacio { background: transparent; }
+
+.dia.pasado { opacity: 0.4; }
+
+.dia.hoy {
+  background: rgba(0, 230, 118, 0.15);
+  border: 1.5px solid var(--primary-green);
+}
+
+.dia.con-evento {
+  background: rgba(255, 107, 0, 0.12);
+  border: 1.5px solid var(--primary-orange);
+  cursor: pointer;
+}
+
+.dia.con-evento.hoy {
+  background: rgba(0, 230, 118, 0.2);
+  border-color: var(--primary-green);
+}
+
+.num-dia {
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--text-white);
+}
+
+.dia.pasado .num-dia { color: var(--text-gray); }
+.dia.hoy .num-dia { color: var(--primary-green); font-weight: 800; }
+.dia.con-evento .num-dia { color: var(--primary-orange); }
+
+.evento-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--primary-orange);
+}
+
+.dia.hoy.con-evento .evento-dot { background: var(--primary-green); }
+
+.evento-label {
+  font-size: 0.58rem; color: var(--primary-orange);
+  font-weight: 600; line-height: 1;
+}
+
+/* Leyenda */
+.leyenda {
+  display: flex; gap: 1.2rem; justify-content: center;
+  margin-top: 1rem; padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.leyenda-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--text-gray);
+}
+
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+
+.dot.naranja { background: var(--primary-orange); }
+.dot.verde   { background: var(--primary-green); }
+
+/* Próximas fechas */
+.proximas-titulo {
+  font-size: 1rem; font-weight: 700;
+  color: var(--text-white); margin-bottom: 1rem;
+}
+
+.empty-card {
+  background: var(--card-bg); border-radius: 12px;
+  border: 1px dashed var(--border-color);
+  padding: 2rem; text-align: center;
+  color: var(--text-gray); font-size: 0.88rem;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+
+.empty-card svg { width: 36px; height: 36px; fill: var(--text-gray); opacity: 0.5; }
+
+.fecha-card {
+  background: var(--card-bg); border-radius: 12px;
+  padding: 1rem 1.2rem; margin-bottom: 0.8rem;
+  border: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 12px;
+  transition: background-color 0.3s;
+}
+
+.fecha-card.hoy-card {
+  border-color: var(--primary-green);
+  background: rgba(0, 230, 118, 0.06);
+}
+
+.fecha-icono {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(45deg, var(--primary-orange), #ff9100);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.fecha-icono svg { width: 24px; height: 24px; fill: white; }
+
+.fecha-card.hoy-card .fecha-icono {
+  background: linear-gradient(45deg, #00b248, var(--primary-green));
+}
+
+.fecha-info { flex: 1; }
+
+.fecha-fecha {
+  font-size: 0.92rem; font-weight: 600;
+  color: var(--text-white); text-transform: capitalize;
+  margin-bottom: 3px;
+}
+
+.fecha-detalle { font-size: 0.78rem; color: var(--text-gray); }
+
+.badge-hoy {
+  background: var(--primary-green); color: #1a1a1a;
+  font-size: 0.7rem; font-weight: 800;
+  padding: 3px 8px; border-radius: 20px;
+  letter-spacing: 1px; flex-shrink: 0;
+}
+
+@media (max-width: 380px) {
+  .dia { min-height: 32px; }
+  .num-dia { font-size: 0.75rem; }
+  .evento-label { display: none; }
+}
+
+.icon-mini {
+  width: 13px; height: 13px;
+  fill: var(--text-gray);
+  vertical-align: middle;
+  margin-bottom: 1px;
+}
+
+.sep {
+  margin: 0 4px;
+  color: var(--border-color);
+}
+
+.fecha-detalle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.offline-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  border-radius: 10px; padding: 8px 14px;
+  color: #ff6b6b; font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.offline-bar svg { width: 16px; height: 16px; fill: #ff6b6b; flex-shrink: 0; }

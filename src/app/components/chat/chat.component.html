@@ -1,0 +1,80 @@
+<div class="page-container">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="btn-back" routerLink="/dashboard">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </a>
+    <div class="navbar-info">
+      <h1 class="navbar-title">Chat Comunitario</h1>
+      @if (colonia) {
+        <span class="colonia-badge">{{ colonia }}</span>
+      }
+    </div>
+  </nav>
+
+  <!-- MENSAJES -->
+  <div class="mensajes-wrapper" #mensajesContainer>
+
+    @if (cargando) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando mensajes...</p>
+      </div>
+    } @else if (mensajes.length === 0) {
+      <div class="empty-chat">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+        <p>Sé el primero en escribir en tu colonia</p>
+      </div>
+    } @else {
+      <div class="mensajes-lista">
+        @for (msg of mensajes; track msg.id) {
+          <div class="mensaje-row" [class.mio]="esMio(msg)">
+
+            @if (!esMio(msg)) {
+              <div class="avatar-mini">
+                {{ msg.nombre.charAt(0).toUpperCase() }}
+              </div>
+            }
+
+            <div class="burbuja" [class.mia]="esMio(msg)" [class.suya]="!esMio(msg)">
+              @if (!esMio(msg)) {
+                <p class="burbuja-nombre">{{ msg.nombre }}</p>
+              }
+              <p class="burbuja-texto">{{ msg.texto }}</p>
+              <p class="burbuja-hora">{{ formatearFecha(msg.fecha) }}</p>
+            </div>
+
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-wrapper">
+    @if (errorMsg) {
+      <p class="error-msg">{{ errorMsg }}</p>
+    }
+    <div class="input-row">
+      <textarea
+        [(ngModel)]="nuevoMensaje"
+        (keydown)="onEnter($event)"
+        placeholder="Escribe un mensaje para tu colonia..."
+        maxlength="300"
+        rows="1"
+        class="input-msg">
+      </textarea>
+      <button class="btn-enviar" (click)="enviar()" [disabled]="enviando || !nuevoMensaje.trim()">
+        @if (enviando) {
+          <div class="spinner-sm"></div>
+        } @else {
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        }
+      </button>
+    </div>
+    <p class="char-count">{{ nuevoMensaje.length }}/300</p>
+  </div>
+
+</div>

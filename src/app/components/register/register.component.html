@@ -1,0 +1,37 @@
+<div class="main-container">
+  <div class="register-card">
+    <div class="header">
+      <img src="assets/logo.png" alt="Coliapor Logo" class="logo">
+      <p class="subtitle">Crea tu cuenta para comenzar</p>
+    </div>
+
+    <div class="form-group">
+      <label>Nombre Completo</label>
+      <input type="text" placeholder="Tu nombre completo" #nombreInput>
+    </div>
+
+    <div class="form-group">
+      <label>Correo Electrónico</label>
+      <input type="email" placeholder="ejemplo@coliapor.com" #emailInput>
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" placeholder="Mínimo 6 caracteres" #passInput>
+    </div>
+
+    <div class="form-group">
+      <label>Confirmar Contraseña</label>
+      <input type="password" placeholder="Repite tu contraseña" #confirmInput>
+    </div>
+
+    <button class="btn-register"
+      (click)="registrar(nombreInput.value, emailInput.value, passInput.value, confirmInput.value)">
+      CREAR CUENTA
+    </button>
+
+    <div class="footer">
+      <p>¿Ya tienes cuenta? <a class="link" routerLink="/login">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+</div>

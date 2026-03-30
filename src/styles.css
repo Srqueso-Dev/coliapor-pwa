@@ -1,0 +1,114 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+/* ── VARIABLES GLOBALES DE TEMA ── */
+:root {
+  --primary-orange: #FF6B00;
+  --primary-green: #00E676;
+  --dark-bg: #1a1a1a;
+  --card-bg: #2d2d2d;
+  --card-bg2: #333;
+  --input-bg: #3a3a3a;
+  --border-color: #444;
+  --text-white: #ffffff;
+  --text-gray: #aaaaaa;
+}
+
+/* ── TEMA CLARO ── */
+body.tema-claro {
+  --dark-bg: #f0f0f0;
+  --card-bg: #ffffff;
+  --card-bg2: #f9f9f9;
+  --input-bg: #f0f0f0;
+  --border-color: #ddd;
+  --text-white: #1a1a1a;
+  --text-gray: #666666;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Segoe UI', Roboto, "Helvetica Neue", sans-serif;
+}
+
+body {
+  background-color: var(--dark-bg);
+  color: var(--text-white);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* ── LOGO: visible en ambos temas ── */
+.nav-logo,
+.sidebar-logo,
+.welcome-logo,
+.logo {
+  mix-blend-mode: normal !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* ── HAMBURGUESA: líneas visibles en tema claro ── */
+body.tema-claro .hamburger span {
+  background: #1a1a1a !important;
+}
+
+/* ── SIDEBAR: heredar variables globales ── */
+body.tema-claro .sidebar {
+  background: var(--card-bg) !important;
+}
+
+body.tema-claro .nav-item {
+  color: var(--text-gray) !important;
+}
+
+body.tema-claro .nav-item svg {
+  fill: var(--text-gray) !important;
+}
+
+/* ── WELCOME SECTION tema claro ── */
+body.tema-claro .welcome-section {
+  background: var(--card-bg) !important;
+}
+
+body.tema-claro .welcome-name {
+  color: var(--text-white) !important;
+}
+
+/* ── CARDS tema claro ── */
+body.tema-claro .card {
+  background: var(--card-bg) !important;
+}
+
+body.tema-claro .card-value {
+  color: var(--text-white) !important;
+}
+
+/* ── PINS LEAFLET (deben estar en estilos globales) ── */
+.pin-casa {
+  position: relative;
+  width: 38px; height: 32px;
+  border-radius: 8px;
+  border: 2px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+}
+
+.pin-punta {
+  position: absolute; bottom: -10px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 10px solid;
+}
+
+/* ── Esquinas rectángulo onboarding ── */
+.esquina-handle {
+  width: 18px; height: 18px;
+  background: #FF6B00;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.5);
+  cursor: grab;
+}
+.esquina-handle:active { cursor: grabbing; }

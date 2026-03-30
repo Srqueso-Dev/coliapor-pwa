@@ -1,0 +1,117 @@
+<div class="page-container">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="btn-back" routerLink="/dashboard">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </a>
+    <h1 class="navbar-title">Calendario de Recolección</h1>
+  </nav>
+
+  <main class="content">
+
+    @if (offline || desdeCache) {
+      <div class="offline-bar">
+        <svg viewBox="0 0 24 24"><path d="M22.99 8.5l-1.87-1.87A10.946 10.946 0 0012 4C8.27 4 4.96 5.63 2.67 8.2L1 6.53C3.71 3.57 7.63 1.76 12 1.76c4.02 0 7.65 1.52 10.38 4.01L24 4.14V9h-4.76l3.75-3.75zM12 7c-2.63 0-4.97 1.07-6.67 2.8L3.47 7.94A10.954 10.954 0 0112 4.76c2.67 0 5.1.96 6.99 2.54L17.12 9.17A7.94 7.94 0 0012 7zm0 4c-1.38 0-2.62.56-3.53 1.47L6.6 10.6A6.966 6.966 0 0112 8.76c1.69 0 3.22.6 4.42 1.6l-1.85 1.85C13.74 11.47 12.93 11 12 11zm0 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm-1 5h2v-2.08c2.84-.48 5-2.97 5-5.92h-2c0 2.21-1.79 4-4 4s-4-1.79-4-4H6c0 2.95 2.16 5.44 5 5.92V20z"/></svg>
+        Sin conexión — mostrando fechas guardadas
+      </div>
+    }
+
+    @if (cargando) {
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Cargando fechas...</p>
+      </div>
+    } @else {
+
+      <!-- CALENDARIO -->
+      <div class="calendar-card">
+
+        <!-- Navegación mes -->
+        <div class="cal-header">
+          <button class="btn-mes" (click)="mesAnterior()">
+            <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <h2 class="mes-titulo">{{ tituloMes }}</h2>
+          <button class="btn-mes" (click)="mesSiguiente()">
+            <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
+        </div>
+
+        <!-- Días de la semana -->
+        <div class="cal-grid header-grid">
+          @for (dia of diasSemana; track dia) {
+            <div class="dia-semana">{{ dia }}</div>
+          }
+        </div>
+
+        <!-- Días del mes -->
+        <div class="cal-grid">
+          @for (item of diasCalendario; track $index) {
+            @if (item === null) {
+              <div class="dia vacio"></div>
+            } @else {
+              <div class="dia"
+                [class.hoy]="esHoy(item.fecha)"
+                [class.con-evento]="tieneEvento(item)"
+                [class.pasado]="esPasado(item.fecha) && !esHoy(item.fecha)">
+                <span class="num-dia">{{ getDia(item.fecha) }}</span>
+                @if (tieneEvento(item)) {
+                  <span class="evento-dot"></span>
+                  <span class="evento-label">{{ item.hora }}</span>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Leyenda -->
+        <div class="leyenda">
+          <div class="leyenda-item">
+            <span class="dot naranja"></span> Recolección
+          </div>
+          <div class="leyenda-item">
+            <span class="dot verde"></span> Hoy
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PRÓXIMAS FECHAS -->
+      <div class="proximas-section">
+        <h3 class="proximas-titulo">Próximas Recolecciones</h3>
+
+        @if (proximasFechas.length === 0) {
+          <div class="empty-card">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            <p>No hay fechas programadas próximamente</p>
+          </div>
+        } @else {
+          @for (f of proximasFechas; track f.id) {
+            <div class="fecha-card" [class.hoy-card]="esHoy(f.fecha)">
+              <div class="fecha-icono">
+                <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+              </div>
+              <div class="fecha-info">
+                <p class="fecha-fecha">{{ f.fecha | date:'EEEE d \'de\' MMMM':'':'es' }}</p>
+                <p class="fecha-detalle">
+                  <svg viewBox="0 0 24 24" class="icon-mini"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                  {{ f.hora }}
+                  <span class="sep">·</span>
+                  <svg viewBox="0 0 24 24" class="icon-mini"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  {{ f.zona }}
+                  @if (f.descripcion) { <span class="sep">·</span> {{ f.descripcion }} }
+                </p>
+              </div>
+              @if (esHoy(f.fecha)) {
+                <span class="badge-hoy">HOY</span>
+              }
+            </div>
+          }
+        }
+      </div>
+
+    }
+
+  </main>
+</div>  

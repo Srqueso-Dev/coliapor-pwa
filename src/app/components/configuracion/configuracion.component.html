@@ -1,0 +1,159 @@
+<div class="page-container">
+
+  <nav class="navbar">
+    <a class="btn-back" routerLink="/dashboard">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="white"/></svg>
+    </a>
+    <h1 class="navbar-title">Configuración</h1>
+  </nav>
+
+  <main class="content">
+
+    <div class="section-card">
+      <h2 class="section-title">Apariencia</h2>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-icon">
+            @if (!temaClaro) {
+              <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" fill="currentColor"/></svg>
+            } @else {
+              <svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z" fill="currentColor"/></svg>
+            }
+          </div>
+          <div>
+            <p class="setting-label">Tema</p>
+            <p class="setting-desc">{{ !temaClaro ? 'Modo oscuro activado' : 'Modo claro activado' }}</p>
+          </div>
+        </div>
+        <button class="toggle" [class.on]="!temaClaro" (click)="toggleTema()">
+          <span class="toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2 class="section-title">Mi Rol</h2>
+
+      <div class="rol-actual">
+        @if (tipoUsuario === 'titular') {
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#FF6B00"/></svg>
+          <div>
+            <p class="setting-label">Titular</p>
+            <p class="setting-desc">Responsable del servicio y pagos de esta vivienda</p>
+          </div>
+        } @else {
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" fill="#00E676"/></svg>
+          <div>
+            <p class="setting-label">Residente</p>
+            <p class="setting-desc">Miembro del hogar sin acceso a pagos</p>
+          </div>
+        }
+      </div>
+
+      <div class="rol-cambio">
+        @if (tipoUsuario === 'titular') {
+          <button class="btn-cambiar-rol residente" (click)="abrirModalRol()">
+            Cambiar a Residente
+          </button>
+        } @else {
+          <button class="btn-cambiar-rol titular" (click)="abrirModalRol()">
+            Cambiar a Titular
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2 class="section-title">Notificaciones</h2>
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <p class="setting-label">Avisos de recolección</p>
+            <p class="setting-desc">Próximamente disponible</p>
+          </div>
+        </div>
+        <button class="toggle off" disabled>
+          <span class="toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2 class="section-title">Acerca de</h2>
+      <div class="info-row">
+        <span class="info-label">Versión</span>
+        <span class="info-value">1.0.0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Desarrollado por</span>
+        <span class="info-value">Cristian & Fernando</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+@if (modalRolVisible) {
+  <div class="modal-overlay" (click)="cerrarModalRol()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <h3 class="modal-titulo">Cambiar a {{ tipoUsuario === 'titular' ? 'Residente' : 'Titular' }}</h3>
+
+      @if (modalEstado === 'confirm') {
+
+        <p class="modal-desc">
+          @if (tipoUsuario === 'residente') {
+            Pasarás a ser el titular de esta vivienda y serás responsable de los pagos del servicio.
+          } @else {
+            Dejarás de ser titular. Si otro residente lo solicita, podrá asumir ese rol.
+          }
+        </p>
+
+        <div class="modal-actions">
+          <button class="btn-modal-cancelar" (click)="cerrarModalRol()">Cancelar</button>
+          <button class="btn-modal-confirmar" (click)="confirmarCambioRol()" [disabled]="guardandoRol">
+            @if (guardandoRol) { Verificando... } @else { Confirmar }
+          </button>
+        </div>
+
+      } @else if (modalEstado === 'stripe') {
+
+        <p class="modal-desc">Para ser titular necesitas agregar un método de pago.</p>
+
+        <div class="test-card-hint">
+          <span>Prueba:</span>
+          <strong>4242 4242 4242 4242</strong>
+          <span>· Fecha futura · CVC cualquiera</span>
+        </div>
+
+        <div class="stripe-card-wrapper">
+          <label>Datos de tarjeta</label>
+          <div id="stripe-config"></div>
+        </div>
+
+        @if (stripeError) {
+          <p class="modal-error-stripe">{{ stripeError }}</p>
+        }
+
+        <div class="modal-actions">
+          <button class="btn-modal-cancelar" (click)="cerrarModalRol()">Cancelar</button>
+          <button class="btn-modal-confirmar" (click)="guardarTarjetaYRol()" [disabled]="guardandoRol">
+            @if (guardandoRol) { Procesando... } @else { Guardar y Confirmar }
+          </button>
+        </div>
+
+      } @else if (modalEstado === 'exito') {
+
+        <div class="modal-exito">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          <p>Rol actualizado correctamente</p>
+        </div>
+
+      }
+
+    </div>
+  </div>
+}

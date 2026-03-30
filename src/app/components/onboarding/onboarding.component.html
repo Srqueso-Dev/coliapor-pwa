@@ -1,0 +1,221 @@
+<div class="main-container">
+  <div class="onboarding-card">
+
+    <div class="header">
+      <img src="assets/logo.png" alt="Coliapor Logo" class="logo">
+      <p class="subtitle">Completa tu perfil para continuar</p>
+    </div>
+
+    <mat-stepper linear #stepper class="custom-stepper" (selectionChange)="onStepChange($event)">
+
+      <!-- PASO 1: Datos Personales -->
+      <mat-step [stepControl]="paso1" label="Datos Personales">
+        <form [formGroup]="paso1">
+
+          <!-- Selector tipo de usuario -->
+          <div class="tipo-usuario-selector">
+            <p class="tipo-label">¿Cómo te registras?</p>
+            <div class="tipo-opciones">
+
+              <button type="button" class="tipo-btn"
+                [class.activo]="tipoUsuario === 'titular'"
+                (click)="seleccionarTipo('titular')">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Titular</span>
+                <small>Responsable del servicio y pagos</small>
+              </button>
+
+              <button type="button" class="tipo-btn"
+                [class.activo]="tipoUsuario === 'residente'"
+                (click)="seleccionarTipo('residente')">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                <span>Residente</span>
+                <small>Miembro del hogar sin acceso a pagos</small>
+              </button>
+
+            </div>
+            @if (errorTipo) {
+              <span class="error-msg">{{ errorTipo }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Nombre Completo</label>
+            <input formControlName="nombre" type="text" placeholder="Tu nombre completo"
+              [class.input-error]="paso1.get('nombre')?.invalid && paso1.get('nombre')?.touched">
+            @if (paso1.get('nombre')?.invalid && paso1.get('nombre')?.touched) {
+              <span class="error-msg">Ingresa tu nombre completo (mínimo 3 caracteres).</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input formControlName="telefono" type="tel" placeholder="10 dígitos"
+              [class.input-error]="paso1.get('telefono')?.invalid && paso1.get('telefono')?.touched">
+            @if (paso1.get('telefono')?.invalid && paso1.get('telefono')?.touched) {
+              <span class="error-msg">Ingresa un teléfono válido de 10 dígitos.</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Fecha de Nacimiento</label>
+            <p class="edad-nota">Solo mayores de 18 años pueden registrarse</p>
+            <input formControlName="fechaNacimiento" type="date" [max]="fechaMaxima"
+              [class.input-error]="paso1.get('fechaNacimiento')?.invalid && paso1.get('fechaNacimiento')?.touched">
+            @if (paso1.get('fechaNacimiento')?.invalid && paso1.get('fechaNacimiento')?.touched) {
+              <span class="error-msg">Selecciona tu fecha de nacimiento.</span>
+            }
+            @if (errorEdad) {
+              <span class="error-msg">{{ errorEdad }}</span>
+            }
+          </div>
+
+          <div class="step-actions">
+            <button class="btn-next" (click)="guardarPaso1()" [disabled]="guardando" matStepperNext>
+              @if (guardando) { Guardando... } @else { SIGUIENTE }
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- PASO 2: Domicilio -->
+      <mat-step [stepControl]="paso2" label="Domicilio">
+        <form [formGroup]="paso2">
+
+          <p class="map-hint">Ubica tu casa en el mapa. Solo se aceptan domicilios dentro de Tonalá.</p>
+          <div id="mapa-onboarding"></div>
+
+          @if (buscandoDireccion) {
+            <p class="buscando">Detectando ubicación...</p>
+          }
+
+          @if (errorUbicacion) {
+            <div class="error-ubicacion">
+              <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              {{ errorUbicacion }}
+            </div>
+          }
+
+          <!-- Calle y Número separados -->
+          <div class="form-row">
+            <div class="form-group flex-3">
+              <label>Calle</label>
+              <input formControlName="calle" type="text" placeholder="Ej. Av. Reforma"
+                [class.input-error]="paso2.get('calle')?.invalid && paso2.get('calle')?.touched">
+              @if (paso2.get('calle')?.invalid && paso2.get('calle')?.touched) {
+                <span class="error-msg">Ingresa la calle.</span>
+              }
+            </div>
+            <div class="form-group flex-1">
+              <label>Número</label>
+              <input formControlName="numero" type="text" placeholder="123"
+                [class.input-error]="paso2.get('numero')?.invalid && paso2.get('numero')?.touched">
+              @if (paso2.get('numero')?.invalid && paso2.get('numero')?.touched) {
+                <span class="error-msg">Requerido.</span>
+              }
+            </div>
+          </div>
+
+          @if (errorDireccion) {
+            <div class="error-ubicacion">
+              <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              {{ errorDireccion }}
+            </div>
+          }
+
+          <!-- Colonia combobox -->
+          <div class="form-group colonia-wrapper">
+            <label>Colonia</label>
+            <input type="text" placeholder="Buscar colonia..."
+              [(ngModel)]="coloniaFiltrada" [ngModelOptions]="{standalone: true}"
+              [class.input-error]="paso2.get('colonia')?.invalid && paso2.get('colonia')?.touched"
+              autocomplete="off">
+            @if (paso2.get('colonia')?.invalid && paso2.get('colonia')?.touched) {
+              <span class="error-msg">Selecciona una colonia.</span>
+            }
+            @if (coloniaFiltrada && !colonias.includes(coloniaFiltrada)) {
+              <div class="colonia-dropdown">
+                @for (c of coloniasFiltradas; track c) {
+                  <div class="colonia-item" (click)="seleccionarColonia(c)">{{ c }}</div>
+                }
+                @if (coloniasFiltradas.length === 0) {
+                  <div class="colonia-item sin-resultados">Sin resultados</div>
+                }
+              </div>
+            }
+            @if (paso2.get('colonia')?.value) {
+              <span class="colonia-seleccionada">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                {{ paso2.get('colonia')?.value }}
+              </span>
+            }
+          </div>
+
+          <div class="step-actions">
+            <button class="btn-back" matStepperPrevious>ATRÁS</button>
+            <button class="btn-next" (click)="guardarPaso2()" [disabled]="guardando || !!errorUbicacion" matStepperNext>
+              @if (guardando) { Validando... } @else { SIGUIENTE }
+            </button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- PASO 3: Método de Pago (solo titulares) -->
+      <mat-step label="Método de Pago">
+        <div class="stripe-container">
+
+          @if (tipoUsuario === 'residente') {
+            <div class="residente-info">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              <p>Como residente, el pago del servicio es responsabilidad del titular de tu vivienda.</p>
+              <p>Puedes continuar sin agregar método de pago.</p>
+            </div>
+            <div class="step-actions">
+              <button class="btn-back" matStepperPrevious>ATRÁS</button>
+              <button class="btn-finish" (click)="finalizar()" [disabled]="guardando">
+                @if (guardando) { Finalizando... } @else { FINALIZAR }
+              </button>
+            </div>
+          } @else {
+
+            <p class="stripe-hint">Agrega una tarjeta para realizar pagos seguros</p>
+
+            <div class="test-card-hint">
+              <span>Tarjeta de prueba:</span>
+              <strong>4242 4242 4242 4242</strong>
+              <span>· Fecha: cualquiera futura · CVC: cualquiera</span>
+            </div>
+
+            <div class="stripe-card-wrapper">
+              <label>Datos de tarjeta</label>
+              <div id="stripe-card"></div>
+            </div>
+
+            @if (stripeError) {
+              <p class="error-msg">{{ stripeError }}</p>
+            }
+
+            @if (pagoGuardado) {
+              <div class="pago-ok">Tarjeta guardada correctamente</div>
+            }
+
+            <div class="step-actions">
+              <button class="btn-back" matStepperPrevious>ATRÁS</button>
+              @if (!pagoGuardado) {
+                <button class="btn-next" (click)="guardarMetodoPago()" [disabled]="guardando">
+                  @if (guardando) { Procesando... } @else { GUARDAR TARJETA }
+                </button>
+              } @else {
+                <button class="btn-finish" (click)="finalizar()" [disabled]="guardando">
+                  @if (guardando) { Finalizando... } @else { FINALIZAR }
+                </button>
+              }
+            </div>
+
+          }
+        </div>
+      </mat-step>
+
+    </mat-stepper>
+  </div>
+</div>

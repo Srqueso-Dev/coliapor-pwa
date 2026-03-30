@@ -1,0 +1,203 @@
+<div class="page-container">
+
+  <nav class="navbar">
+    <a class="btn-back" routerLink="/dashboard">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="white"/></svg>
+    </a>
+    <h1 class="navbar-title">Mi Perfil</h1>
+  </nav>
+
+  <main class="content">
+
+    <div class="avatar-section">
+      <div class="avatar">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" fill="white"/></svg>
+      </div>
+      <p class="avatar-email">{{ email }}</p>
+      <span class="tipo-badge" [class.titular]="tipoUsuario === 'titular'" [class.residente]="tipoUsuario === 'residente'">
+        {{ tipoUsuario === 'titular' ? 'Titular' : 'Residente' }}
+      </span>
+    </div>
+
+    @if (offline) {
+      <div class="offline-banner">
+        <svg viewBox="0 0 24 24"><path d="M22.99 8.5l-1.87-1.87A10.946 10.946 0 0012 4C8.27 4 4.96 5.63 2.67 8.2L1 6.53C3.71 3.57 7.63 1.76 12 1.76c4.02 0 7.65 1.52 10.38 4.01L24 4.14V9h-4.76l3.75-3.75zM12 7c-2.63 0-4.97 1.07-6.67 2.8L3.47 7.94A10.954 10.954 0 0112 4.76c2.67 0 5.1.96 6.99 2.54L17.12 9.17A7.94 7.94 0 0012 7zm0 4c-1.38 0-2.62.56-3.53 1.47L6.6 10.6A6.966 6.966 0 0112 8.76c1.69 0 3.22.6 4.42 1.6l-1.85 1.85C13.74 11.47 12.93 11 12 11zm0 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm-1 5h2v-2.08c2.84-.48 5-2.97 5-5.92h-2c0 2.21-1.79 4-4 4s-4-1.79-4-4H6c0 2.95 2.16 5.44 5 5.92V20z"/></svg>
+        Sin conexión — los cambios se guardarán cuando vuelva internet
+      </div>
+    }
+    @if (pendienteSync && !offline) {
+      <div class="sync-banner">
+        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        Sincronizando cambios...
+      </div>
+    }
+    @if (guardadoOk) {
+      <div class="ok-msg">{{ offline ? 'Guardado localmente' : 'Guardado correctamente' }}</div>
+    }
+
+    <div class="section-card">
+      <div class="section-header-row">
+        <h2 class="section-title">Datos Personales</h2>
+        <button class="btn-editar" (click)="toggleEditarPersonal()">
+          @if (editandoPersonal) { Cancelar } @else {
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+            Editar
+          }
+        </button>
+      </div>
+      <form [formGroup]="formPersonal">
+        <div class="field">
+          <label>Nombre Completo</label>
+          @if (editandoPersonal) {
+            <input formControlName="nombre" type="text"
+              [class.input-error]="formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched">
+            @if (formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched) {
+              <span class="error-msg">Mínimo 3 caracteres.</span>
+            }
+          } @else { <p class="field-value">{{ formPersonal.value.nombre || '—' }}</p> }
+        </div>
+        <div class="field">
+          <label>Teléfono</label>
+          @if (editandoPersonal) {
+            <input formControlName="telefono" type="tel"
+              [class.input-error]="formPersonal.get('telefono')?.invalid && formPersonal.get('telefono')?.touched">
+            @if (formPersonal.get('telefono')?.invalid && formPersonal.get('telefono')?.touched) {
+              <span class="error-msg">10 dígitos requeridos.</span>
+            }
+          } @else { <p class="field-value">{{ formPersonal.value.telefono || '—' }}</p> }
+        </div>
+        <div class="field">
+          <label>Correo Electrónico</label>
+          <p class="field-value gray">{{ email }}</p>
+        </div>
+      </form>
+      @if (editandoPersonal) {
+        <button class="btn-guardar" (click)="guardarPersonal()" [disabled]="guardando">
+          @if (guardando) { Guardando... } @else { GUARDAR CAMBIOS }
+        </button>
+      }
+    </div>
+
+    <div class="section-card">
+      <div class="section-header-row">
+        <h2 class="section-title">Domicilio</h2>
+        <button class="btn-editar" (click)="toggleEditarDomicilio()">
+          @if (editandoDomicilio) { Cancelar } @else {
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+            Editar
+          }
+        </button>
+      </div>
+      <form [formGroup]="formDomicilio">
+
+        @if (editandoDomicilio) {
+          <p class="map-hint-perfil">Arrastra el pin naranja en el mapa para ubicar exactamente tu casa.</p>
+          <div id="mapa-perfil"></div>
+        }
+
+        <div class="form-row">
+          <div class="field flex-3">
+            <label>Calle</label>
+            @if (editandoDomicilio) {
+              <input formControlName="calle" type="text"
+                [class.input-error]="formDomicilio.get('calle')?.invalid && formDomicilio.get('calle')?.touched">
+              @if (formDomicilio.get('calle')?.invalid && formDomicilio.get('calle')?.touched) {
+                <span class="error-msg">Requerido.</span>
+              }
+            } @else { <p class="field-value">{{ formDomicilio.value.calle || '—' }}</p> }
+          </div>
+          <div class="field flex-1">
+            <label>Número</label>
+            @if (editandoDomicilio) {
+              <input formControlName="numero" type="text"
+                [class.input-error]="formDomicilio.get('numero')?.invalid && formDomicilio.get('numero')?.touched">
+              @if (formDomicilio.get('numero')?.invalid && formDomicilio.get('numero')?.touched) {
+                <span class="error-msg">Requerido.</span>
+              }
+            } @else { <p class="field-value">{{ formDomicilio.value.numero || '—' }}</p> }
+          </div>
+        </div>
+
+        @if (errorDomicilio) {
+          <div class="error-dir">
+            <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            {{ errorDomicilio }}
+          </div>
+        }
+
+        <div class="field colonia-wrapper">
+          <label>Colonia</label>
+          @if (editandoDomicilio) {
+            <input type="text" placeholder="Buscar colonia..."
+              [(ngModel)]="coloniaFiltrada" [ngModelOptions]="{standalone: true}"
+              autocomplete="off">
+            @if (coloniaFiltrada && !colonias.includes(coloniaFiltrada)) {
+              <div class="colonia-dropdown">
+                @for (c of coloniasFiltradas; track c) {
+                  <div class="colonia-item" (click)="seleccionarColonia(c)">{{ c }}</div>
+                }
+                @if (coloniasFiltradas.length === 0) {
+                  <div class="colonia-item sin-resultados">Sin resultados</div>
+                }
+              </div>
+            }
+            @if (formDomicilio.get('colonia')?.value) {
+              <span class="colonia-sel">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                {{ formDomicilio.get('colonia')?.value }}
+              </span>
+            }
+          } @else {
+            <p class="field-value">{{ formDomicilio.value.colonia || '—' }}</p>
+          }
+        </div>
+
+      </form>
+      @if (editandoDomicilio) {
+        <button class="btn-guardar" (click)="guardarDomicilio()" [disabled]="guardando">
+          @if (guardando) { Validando... } @else { GUARDAR DOMICILIO }
+        </button>
+      }
+    </div>
+
+    @if (tipoUsuario === 'titular') {
+      <div class="section-card">
+        <div class="section-header-row">
+          <h2 class="section-title">Método de Pago</h2>
+          <button class="btn-editar" (click)="toggleEditarPago()">
+            @if (editandoPago) { Cancelar } @else {
+              <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg>
+              {{ metodoPago ? 'Cambiar' : 'Agregar' }}
+            }
+          </button>
+        </div>
+        @if (!editandoPago) {
+          @if (metodoPago) {
+            <div class="pago-card">
+              <div class="pago-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" fill="white"/></svg>
+              </div>
+              <div>
+                <p class="pago-marca">{{ metodoPago.marca | titlecase }} •••• {{ metodoPago.ultimos4 }}</p>
+                <p class="pago-exp">Vence {{ metodoPago.expMes }}/{{ metodoPago.expAnio }}</p>
+              </div>
+            </div>
+          } @else {
+            <p class="empty-msg">No has registrado un método de pago.</p>
+          }
+        }
+        @if (editandoPago) {
+          <div class="stripe-wrapper">
+            <label class="stripe-label">Datos de la nueva tarjeta</label>
+            <div id="stripe-card-perfil"></div>
+            @if (stripeError) { <span class="error-msg">{{ stripeError }}</span> }
+          </div>
+          <button class="btn-guardar" (click)="guardarNuevaTarjeta()" [disabled]="guardandoPago">
+            @if (guardandoPago) { Procesando... } @else { GUARDAR TARJETA }
+          </button>
+        }
+      </div>
+    }
+
+  </main>
+</div>
