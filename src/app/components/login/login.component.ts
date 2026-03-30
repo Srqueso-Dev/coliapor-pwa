@@ -51,7 +51,15 @@ export class LoginComponent implements OnInit {
         return;
       }
 
-      if (!docSnap.exists() || !docSnap.data()['perfilCompleto']) {
+      const data = docSnap.exists() ? docSnap.data() : null;
+      const rol  = data?.['rol'] || '';
+
+      // Redirección por rol
+      if (rol === 'admin') {
+        window.location.href = '/admin';
+      } else if (rol === 'recolector') {
+        window.location.href = '/recolector';
+      } else if (!data || !data['perfilCompleto']) {
         window.location.href = '/onboarding';
       } else {
         window.location.href = '/dashboard';

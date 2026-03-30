@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Auth, signOut } from '@angular/fire/auth';
+import { Auth, signOut, createUserWithEmailAndPassword, sendEmailVerification } from '@angular/fire/auth';
 import { Firestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, setDoc, addDoc, query, orderBy } from '@angular/fire/firestore';
 import * as L from 'leaflet';
 import { ToastService } from '../toast/toast.service';
@@ -22,10 +22,11 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   seccionActiva = 'usuarios';
 
-  usuarios: any[]     = [];
-  recolectores: any[] = [];
-  fechas: any[]       = [];
-  pagos: any[]        = [];
+  usuarios: any[]              = [];
+  recolectores: any[]          = [];
+  fechas: any[]                = [];
+  pagos: any[]                 = [];
+  solicitudes: any[]           = [];
 
   cargando = false;
 
@@ -50,10 +51,16 @@ export class AdminComponent implements OnInit, OnDestroy {
   editandoFecha: any = null;
   montoActual = 0;
 
+  // ── Modal aprobación recolector ──────────────────────
+  modalSolicitud: any     = null;
+  passwordTemporal        = '';
+  passwordError           = '';
+  aprobando               = false;
+
   // ── Mapa ──────────────────────────────────────────────
   private mapa!: L.Map;
   private capaMarcadores!: L.LayerGroup;
-  mapaListo      = false;
+  mapaListo         = false;
   usuariosGeo: any[] = [];
   casaSeleccionada: any = null;
 
@@ -67,6 +74,9 @@ export class AdminComponent implements OnInit, OnDestroy {
     const now = new Date();
     const mes = now.toLocaleString('es-MX', { month: 'long' });
     return `${mes.charAt(0).toUpperCase() + mes.slice(1)} ${now.getFullYear()}`;
+  }
+  get solicitudesPendientes(): number {
+    return this.solicitudes.filter(s => s.estado === 'pendiente').length;
   }
 
   ngOnInit() {
@@ -87,7 +97,8 @@ export class AdminComponent implements OnInit, OnDestroy {
     try {
       await Promise.all([
         this.cargarUsuarios(), this.cargarRecolectores(),
-        this.cargarFechas(), this.cargarPagos(), this.cargarMonto()
+        this.cargarFechas(), this.cargarPagos(),
+        this.cargarMonto(), this.cargarSolicitudes()
       ]);
     } finally { this.cargando = false; }
   }
@@ -106,15 +117,12 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   async cargarFechas() {
     const snap = await getDocs(query(collection(this.firestore, 'fechasRecoleccion'), orderBy('fecha')));
-    const hoy  = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+    const hoy  = new Date().toISOString().split('T')[0];
     const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    // Borrar automáticamente las fechas pasadas (día anterior o antes)
     const pasadas = todas.filter((f: any) => f.fecha < hoy);
     for (const f of pasadas) {
       await deleteDoc(doc(this.firestore, 'fechasRecoleccion', f.id));
     }
-
     this.fechas = todas.filter((f: any) => f.fecha >= hoy);
   }
 
@@ -129,6 +137,11 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.montoActual = snap.data()['montoMensual'] || 0;
       this.formMonto.patchValue({ monto: this.montoActual });
     }
+  }
+
+  async cargarSolicitudes() {
+    const snap = await getDocs(query(collection(this.firestore, 'solicitudesRecolector'), orderBy('creadoEn', 'desc')));
+    this.solicitudes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   }
 
   // ── Mapa ──────────────────────────────────────────────
@@ -155,14 +168,12 @@ export class AdminComponent implements OnInit, OnDestroy {
   pintarPins() {
     if (!this.mapa || !this.capaMarcadores) return;
     this.capaMarcadores.clearLayers();
-
     this.usuariosGeo.forEach(u => {
       const pagado = this.pagoClave(u);
       const color  = pagado ? '#00E676' : '#FF6B00';
       const borde  = pagado ? '#00a152' : '#c44000';
       const numero = u.domicilio?.numero || '?';
-
-      const icono = L.divIcon({
+      const icono  = L.divIcon({
         className: '',
         html: `<div class="pin-casa" style="background:${color};border-color:${borde};">
                  <span>${numero}</span>
@@ -170,7 +181,6 @@ export class AdminComponent implements OnInit, OnDestroy {
                </div>`,
         iconSize: [38, 44], iconAnchor: [19, 44], popupAnchor: [0, -44]
       });
-
       const marker = L.marker([u.domicilio.lat, u.domicilio.lng], { icon: icono });
       marker.on('click', () => { this.casaSeleccionada = { ...u, pagado }; });
       this.capaMarcadores.addLayer(marker);
@@ -206,6 +216,91 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.toast.ok('Onboarding reseteado.');
       await this.cargarUsuarios();
     } catch { this.toast.error('Error al resetear el onboarding.'); }
+  }
+
+  // ── Solicitudes de recolectores ───────────────────────
+  abrirModalAprobar(solicitud: any) {
+    this.modalSolicitud  = solicitud;
+    this.passwordTemporal = '';
+    this.passwordError   = '';
+  }
+
+  cerrarModal() {
+    this.modalSolicitud  = null;
+    this.passwordTemporal = '';
+    this.passwordError   = '';
+  }
+
+  async aprobarSolicitud() {
+    if (!this.passwordTemporal || this.passwordTemporal.length < 6) {
+      this.passwordError = 'La contraseña debe tener al menos 6 caracteres.';
+      return;
+    }
+    this.aprobando = true;
+    const s = this.modalSolicitud;
+    try {
+      // Guardar el auth actual del admin
+      const adminUser = this.auth.currentUser;
+
+      // Crear cuenta en Firebase Auth
+      const credencial = await createUserWithEmailAndPassword(this.auth, s.email, this.passwordTemporal);
+      await sendEmailVerification(credencial.user);
+
+      // Crear documento en Firestore
+      await setDoc(doc(this.firestore, 'usuarios', credencial.user.uid), {
+        nombre:         s.nombre,
+        telefono:       s.telefono,
+        email:          s.email,
+        zona:           s.zona,
+        licencia:       s.licencia,
+        rol:            'recolector',
+        activo:         true,
+        perfilCompleto: true,
+        creadoEn:       new Date()
+      });
+
+      // También guardar en colección recolectores
+      await addDoc(collection(this.firestore, 'recolectores'), {
+        uid:      credencial.user.uid,
+        nombre:   s.nombre,
+        telefono: s.telefono,
+        email:    s.email,
+        zona:     s.zona,
+        activo:   true,
+        creadoEn: new Date()
+      });
+
+      // Actualizar solicitud como aprobada
+      await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), {
+        estado: 'aprobada'
+      });
+
+      // El admin queda deslogueado porque createUserWithEmailAndPassword cambia el usuario activo
+      // Necesitamos volver a loguear al admin — como no podemos hacerlo sin contraseña,
+      // simplemente redirigimos al login con un mensaje
+      this.toast.ok(`Recolector ${s.nombre} aprobado. Se enviará el correo de verificación. Vuelve a iniciar sesión.`);
+      setTimeout(() => { window.location.href = '/login'; }, 3000);
+
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        this.toast.error('Este correo ya tiene una cuenta registrada.');
+      } else {
+        this.toast.error('Error al crear la cuenta. Intenta de nuevo.');
+      }
+    } finally {
+      this.aprobando = false;
+      this.cerrarModal();
+    }
+  }
+
+  async declinarSolicitud(id: string) {
+    const ok = await this.toast.confirmar('¿Declinar esta solicitud?');
+    if (!ok) return;
+    try {
+      await updateDoc(doc(this.firestore, 'solicitudesRecolector', id), { estado: 'declinada' });
+      this.toast.ok('Solicitud declinada.');
+      await this.cargarSolicitudes();
+    } catch { this.toast.error('Error al declinar la solicitud.'); }
   }
 
   // ── Recolectores ──────────────────────────────────────

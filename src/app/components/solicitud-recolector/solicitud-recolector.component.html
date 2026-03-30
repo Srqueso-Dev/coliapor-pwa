@@ -1,0 +1,83 @@
+<div class="sr-container">
+  <div class="sr-card">
+
+    <div class="sr-header">
+      <img src="assets/logo.png" alt="Coliapor" class="sr-logo">
+      <h1 class="sr-title">Solicitud de Recolector</h1>
+      <p class="sr-sub">Completa el formulario y el administrador revisará tu solicitud.</p>
+    </div>
+
+    @if (enviado) {
+      <div class="sr-exito">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <h2>¡Solicitud enviada!</h2>
+        <p>El administrador revisará tu información y te contactará al correo proporcionado.</p>
+      </div>
+    } @else {
+      <form [formGroup]="form">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre Completo</label>
+            <input formControlName="nombre" type="text" placeholder="Tu nombre completo"
+              [class.input-error]="form.get('nombre')?.invalid && form.get('nombre')?.touched">
+            @if (form.get('nombre')?.errors?.['required'] && form.get('nombre')?.touched) {
+              <span class="error-msg">Requerido.</span>
+            } @else if (form.get('nombre')?.errors?.['pattern'] && form.get('nombre')?.touched) {
+              <span class="error-msg">Solo letras y espacios.</span>
+            }
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input formControlName="telefono" type="tel" placeholder="10 dígitos"
+              [class.input-error]="form.get('telefono')?.invalid && form.get('telefono')?.touched">
+            @if (form.get('telefono')?.invalid && form.get('telefono')?.touched) {
+              <span class="error-msg">10 dígitos requeridos.</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input formControlName="email" type="email" placeholder="correo@ejemplo.com"
+            [class.input-error]="form.get('email')?.invalid && form.get('email')?.touched">
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <span class="error-msg">Correo válido requerido.</span>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Zona de trabajo</label>
+            <input formControlName="zona" type="text" placeholder="Ej. Zona Norte, Coyula..."
+              [class.input-error]="form.get('zona')?.invalid && form.get('zona')?.touched">
+            @if (form.get('zona')?.invalid && form.get('zona')?.touched) {
+              <span class="error-msg">Requerido.</span>
+            }
+          </div>
+          <div class="form-group">
+            <label>Número de licencia</label>
+            <input formControlName="licencia" type="text" placeholder="Licencia de conducir"
+              [class.input-error]="form.get('licencia')?.invalid && form.get('licencia')?.touched">
+            @if (form.get('licencia')?.invalid && form.get('licencia')?.touched) {
+              <span class="error-msg">Requerido.</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mensaje adicional <span class="opcional">(opcional)</span></label>
+          <textarea formControlName="mensaje" placeholder="Experiencia, disponibilidad, etc." rows="3"></textarea>
+        </div>
+
+        <button class="btn-enviar" (click)="enviar()" [disabled]="enviando">
+          @if (enviando) { Enviando... } @else { ENVIAR SOLICITUD }
+        </button>
+
+      </form>
+
+      <p class="sr-footer">¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
+    }
+
+  </div>
+</div>
