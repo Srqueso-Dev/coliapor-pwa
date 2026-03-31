@@ -504,3 +504,163 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); curso
   display: flex; gap: 10px; justify-content: flex-end;
   padding: 0.8rem 1.2rem 1.2rem;
 }
+/* ══ AGREGAR AL FINAL DE admin.component.css ══ */
+
+select {
+  width: 100%; padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px; color: var(--text-white);
+  font-size: 0.92rem; outline: none;
+  cursor: pointer; transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23aaaaaa'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+  padding-right: 36px;
+}
+select:focus { border-color: var(--primary-green); box-shadow: 0 0 8px rgba(0,230,118,0.2); }
+select.input-error { border-color: #ff4444; }
+select option { background: var(--card-bg); color: var(--text-white); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: 12px; padding: 1rem;
+  border: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 12px;
+}
+.stat-card.verde   { border-left: 4px solid #00E676; }
+.stat-card.naranja { border-left: 4px solid #FF6B00; }
+.stat-card.gris    { border-left: 4px solid #aaa; }
+
+.stat-icono {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-card.verde   .stat-icono { background: rgba(0,230,118,0.1); }
+.stat-card.naranja .stat-icono { background: rgba(255,107,0,0.1); }
+.stat-card.gris    .stat-icono { background: rgba(170,170,170,0.1); }
+.stat-icono svg { width: 22px; height: 22px; }
+.stat-card.verde   .stat-icono svg { fill: #00E676; }
+.stat-card.naranja .stat-icono svg { fill: #FF6B00; }
+.stat-card.gris    .stat-icono svg { fill: #aaa; }
+
+.stat-label { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 3px; }
+.stat-valor { font-size: 1.3rem; font-weight: 700; color: var(--text-white); }
+.stat-valor span { font-size: 0.8rem; font-weight: 400; color: var(--text-gray); }
+
+.camiones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.camion-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+.camion-card:hover { transform: translateY(-2px); }
+.camion-card.servicio      { border-top: 3px solid #00E676; }
+.camion-card.mantenimiento { border-top: 3px solid #FF6B00; }
+
+.camion-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 1rem 1rem 0.75rem;
+}
+.camion-icono-wrap {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.camion-icono-wrap svg { width: 24px; height: 24px; }
+.camion-placa  { font-size: 1rem; font-weight: 700; color: var(--text-white); }
+.camion-modelo { font-size: 0.78rem; color: var(--text-gray); }
+
+.estado-pill {
+  margin-left: auto; padding: 3px 10px;
+  border-radius: 20px; border: 1px solid;
+  font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+}
+
+.camion-card-body {
+  padding: 0 1rem 0.75rem;
+  display: flex; flex-direction: column; gap: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+.camion-dato { display: flex; justify-content: space-between; align-items: center; }
+.dato-label  { font-size: 0.78rem; color: var(--text-gray); }
+.dato-valor  { font-size: 0.88rem; font-weight: 600; color: var(--text-white); }
+.dato-valor.naranja { color: #FF6B00; }
+.dato-valor.verde   { color: #00E676; }
+.dato-valor.rojo    { color: #ff4444; }
+
+.camion-card-footer {
+  display: flex; gap: 8px; padding: 0.75rem 1rem; justify-content: flex-end;
+}
+
+.tab-badge {
+  background: #ff4444; color: #fff;
+  font-size: 0.65rem; font-weight: 700;
+  padding: 2px 6px; border-radius: 10px;
+  margin-left: 4px; min-width: 18px; text-align: center;
+}
+
+.status.pendiente {
+  background: rgba(255,200,0,0.15);
+  color: #ffc800;
+  border: 1px solid rgba(255,200,0,0.3);
+}
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-card {
+  background: var(--card-bg); border-radius: 16px;
+  width: 100%; max-width: 420px;
+  border-top: 3px solid #FF6B00;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.2rem 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-white); }
+.modal-body { padding: 1.2rem; }
+.modal-info { font-size: 0.9rem; color: var(--text-white); margin-bottom: 4px; }
+.modal-info.gray { color: var(--text-gray); font-size: 0.82rem; }
+.modal-hint { font-size: 0.78rem; color: var(--text-gray); margin-top: 8px; line-height: 1.4; }
+.modal-body .form-group label {
+  display: block; color: #FF6B00; font-size: 0.82rem; font-weight: 600; margin-bottom: 5px;
+}
+.modal-body input {
+  width: 100%; padding: 10px 12px;
+  background: var(--input-bg); border: 1px solid var(--border-color);
+  border-radius: 8px; color: var(--text-white); font-size: 0.92rem; outline: none;
+  transition: border-color 0.2s;
+}
+.modal-body input:focus { border-color: #00E676; }
+.modal-body input.input-error { border-color: #ff4444; }
+.modal-body .error-msg { color: #ff4444; font-size: 0.75rem; margin-top: 3px; display: block; }
+.modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 0.8rem 1.2rem 1.2rem;
+}

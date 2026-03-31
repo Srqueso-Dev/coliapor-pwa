@@ -1,5 +1,6 @@
 <div class="admin-wrapper">
 
+  <!-- ══ NAVBAR ══ -->
   <nav class="navbar">
     <div class="navbar-brand">
       <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
@@ -16,11 +17,15 @@
         <span>Recolectores</span>
       </button>
       <button class="tab" [class.active]="seccionActiva === 'solicitudes'" (click)="setSeccion('solicitudes')">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8H7v-2h4v2zm4-4H7v-2h8v2zm0-4H7V7h8v2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
         <span>Solicitudes</span>
         @if (solicitudesPendientes > 0) {
           <span class="tab-badge">{{ solicitudesPendientes }}</span>
         }
+      </button>
+      <button class="tab" [class.active]="seccionActiva === 'camiones'" (click)="setSeccion('camiones')">
+        <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM7 18c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm13 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-7l1.5 2H5V6h12v5h2z"/></svg>
+        <span>Camiones</span>
       </button>
       <button class="tab" [class.active]="seccionActiva === 'fechas'" (click)="setSeccion('fechas')">
         <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
@@ -37,24 +42,24 @@
     </div>
 
     <div class="nav-actions">
-      <a routerLink="/recolector" class="btn-volver" title="Ver panel recolector">
+      <a routerLink="/recolector" class="btn-volver" title="Vista recolector">
         <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
-        Recolector
+        <span>Recolector</span>
       </a>
       <a routerLink="/dashboard" class="btn-volver">
         <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-        Volver
+        <span>Volver</span>
       </a>
       <button class="btn-logout" (click)="cerrarSesion()">
         <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-        Salir
+        <span>Salir</span>
       </button>
     </div>
   </nav>
 
   <main class="content">
 
-    <!-- ── USUARIOS ── -->
+    <!-- ══ USUARIOS ══ -->
     @if (seccionActiva === 'usuarios') {
       <div class="section">
         <div class="section-header">
@@ -81,11 +86,9 @@
                     <td data-label="Correo">{{ u.email || '—' }}</td>
                     <td data-label="Teléfono">{{ u.telefono || '—' }}</td>
                     <td data-label="Estado">
-                      @if (u.activo === false) {
-                        <span class="status inactivo">Inactivo</span>
-                      } @else {
-                        <span class="status activo">Activo</span>
-                      }
+                      <span class="status" [class.activo]="u.activo !== false" [class.inactivo]="u.activo === false">
+                        {{ u.activo === false ? 'Inactivo' : 'Activo' }}
+                      </span>
                     </td>
                     <td data-label="Onboarding">
                       <button class="btn-sm orange" (click)="resetOnboarding(u.id)">Re-onboarding</button>
@@ -106,7 +109,7 @@
       </div>
     }
 
-    <!-- ── RECOLECTORES ── -->
+    <!-- ══ RECOLECTORES ══ -->
     @if (seccionActiva === 'recolectores') {
       <div class="section">
         <div class="section-header">
@@ -144,10 +147,14 @@
                 }
               </div>
               <div class="form-group">
-                <label>Zona</label>
-                <input formControlName="zona" type="text" placeholder="Ej. Zona Norte"
-                  [class.input-error]="formRecolector.get('zona')?.invalid && formRecolector.get('zona')?.touched">
-                @if (formRecolector.get('zona')?.invalid && formRecolector.get('zona')?.touched) {
+                <label>Colonia asignada</label>
+                <select formControlName="colonia" [class.input-error]="formRecolector.get('colonia')?.invalid && formRecolector.get('colonia')?.touched">
+                  <option value="">Selecciona colonia</option>
+                  @for (c of colonias; track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                </select>
+                @if (formRecolector.get('colonia')?.invalid && formRecolector.get('colonia')?.touched) {
                   <span class="error-msg">Requerido.</span>
                 }
               </div>
@@ -163,7 +170,7 @@
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Zona</th><th>Acciones</th></tr>
+                <tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Colonia</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 @for (r of recolectores; track r.id) {
@@ -171,7 +178,7 @@
                     <td data-label="Nombre">{{ r.nombre }}</td>
                     <td data-label="Teléfono">{{ r.telefono }}</td>
                     <td data-label="Correo">{{ r.email }}</td>
-                    <td data-label="Zona"><span class="zona-badge">{{ r.zona }}</span></td>
+                    <td data-label="Colonia"><span class="zona-badge">{{ r.colonia }}</span></td>
                     <td data-label="Acción">
                       <button class="btn-sm red" (click)="eliminarRecolector(r.id)">Eliminar</button>
                     </td>
@@ -184,7 +191,7 @@
       </div>
     }
 
-    <!-- ── SOLICITUDES ── -->
+    <!-- ══ SOLICITUDES ══ -->
     @if (seccionActiva === 'solicitudes') {
       <div class="section">
         <div class="section-header">
@@ -197,7 +204,7 @@
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Zona</th><th>Estado</th><th>Acciones</th></tr>
+                <tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Colonia</th><th>Estado</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 @for (s of solicitudes; track s.id) {
@@ -205,15 +212,14 @@
                     <td data-label="Nombre">{{ s.nombre }}</td>
                     <td data-label="Correo">{{ s.email }}</td>
                     <td data-label="Teléfono">{{ s.telefono }}</td>
-                    <td data-label="Zona"><span class="zona-badge">{{ s.zona }}</span></td>
+                    <td data-label="Colonia"><span class="zona-badge">{{ s.colonia || s.zona }}</span></td>
                     <td data-label="Estado">
-                      @if (s.estado === 'pendiente') {
-                        <span class="status pendiente">Pendiente</span>
-                      } @else if (s.estado === 'aprobada') {
-                        <span class="status activo">Aprobada</span>
-                      } @else {
-                        <span class="status inactivo">Declinada</span>
-                      }
+                      <span class="status"
+                        [class.pendiente]="s.estado === 'pendiente'"
+                        [class.activo]="s.estado === 'aprobada'"
+                        [class.inactivo]="s.estado === 'declinada'">
+                        {{ s.estado | titlecase }}
+                      </span>
                     </td>
                     <td data-label="Acciones" class="acciones">
                       @if (s.estado === 'pendiente') {
@@ -230,7 +236,179 @@
       </div>
     }
 
-    <!-- ── FECHAS ── -->
+    <!-- ══ CAMIONES ══ -->
+    @if (seccionActiva === 'camiones') {
+      <div class="section">
+
+        <!-- Resumen estadísticas -->
+        <div class="section-header">
+          <h2>Gestión de Camiones</h2>
+          <span class="badge">{{ camiones.length }} camiones</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card verde">
+            <div class="stat-icono">
+              <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+            </div>
+            <div>
+              <p class="stat-label">En servicio</p>
+              <p class="stat-valor">{{ camionesEnServicio }}</p>
+            </div>
+          </div>
+          <div class="stat-card naranja">
+            <div class="stat-icono">
+              <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33V9h10V5.33C17 4.6 16.4 4 15.67 4zM17 11H7v9.67C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V11z"/></svg>
+            </div>
+            <div>
+              <p class="stat-label">En mantenimiento</p>
+              <p class="stat-valor">{{ camionesEnMantenimiento }}</p>
+            </div>
+          </div>
+          <div class="stat-card gris">
+            <div class="stat-icono">
+              <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+            </div>
+            <div>
+              <p class="stat-label">Peso total en servicio</p>
+              <p class="stat-valor">{{ pesoTotalServicio }} <span>kg</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario agregar / editar camión -->
+        <div class="form-card">
+          <h3>{{ editandoCamion ? 'Editar Camión' : 'Agregar Camión' }}</h3>
+          <form [formGroup]="formCamion">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Placa</label>
+                <input formControlName="placa" type="text" placeholder="Ej. TJA-123-A"
+                  [class.input-error]="formCamion.get('placa')?.invalid && formCamion.get('placa')?.touched">
+                @if (formCamion.get('placa')?.invalid && formCamion.get('placa')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Modelo</label>
+                <input formControlName="modelo" type="text" placeholder="Ej. Kenworth T370"
+                  [class.input-error]="formCamion.get('modelo')?.invalid && formCamion.get('modelo')?.touched">
+                @if (formCamion.get('modelo')?.invalid && formCamion.get('modelo')?.touched) {
+                  <span class="error-msg">Requerido.</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Estado</label>
+                <select formControlName="estado">
+                  <option value="apagado">Apagado</option>
+                  <option value="servicio">En servicio</option>
+                  <option value="mantenimiento">En mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Recolector asignado</label>
+                <select formControlName="recolectorId">
+                  <option value="">Sin asignar</option>
+                  @for (r of recolectores; track r.id) {
+                    <option [value]="r.uid || r.id">{{ r.nombre }} — {{ r.colonia }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Peso actual (kg)</label>
+                <input formControlName="pesoActual" type="number" min="0" placeholder="0"
+                  [class.input-error]="formCamion.get('pesoActual')?.invalid && formCamion.get('pesoActual')?.touched">
+                @if (formCamion.get('pesoActual')?.invalid && formCamion.get('pesoActual')?.touched) {
+                  <span class="error-msg">Valor válido requerido.</span>
+                }
+              </div>
+              <div class="form-group">
+                <label>Contenedor</label>
+                <select formControlName="contenedorLleno">
+                  <option [value]="false">Disponible</option>
+                  <option [value]="true">Lleno</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              @if (editandoCamion) {
+                <button class="btn-secondary" (click)="cancelarEdicionCamion()">Cancelar</button>
+              }
+              <button class="btn-primary" (click)="guardarCamion()" [disabled]="cargando">
+                @if (cargando) { Guardando... }
+                @else if (editandoCamion) { ACTUALIZAR CAMIÓN }
+                @else { + AGREGAR CAMIÓN }
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- Lista de camiones -->
+        @if (camiones.length === 0) {
+          <div class="empty">No hay camiones registrados aún.</div>
+        } @else {
+          <div class="camiones-grid">
+            @for (c of camiones; track c.id) {
+              <div class="camion-card" [class.servicio]="c.estado === 'servicio'" [class.mantenimiento]="c.estado === 'mantenimiento'">
+
+                <div class="camion-card-header">
+                  <div class="camion-icono-wrap" [style.background]="estadoColor(c.estado) + '22'">
+                    <svg viewBox="0 0 24 24" [style.fill]="estadoColor(c.estado)">
+                      <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/>
+                    </svg>
+                  </div>
+                  <div class="camion-info">
+                    <p class="camion-placa">{{ c.placa }}</p>
+                    <p class="camion-modelo">{{ c.modelo }}</p>
+                  </div>
+                  <span class="estado-pill"
+                    [style.background]="estadoColor(c.estado) + '22'"
+                    [style.color]="estadoColor(c.estado)"
+                    [style.border-color]="estadoColor(c.estado)">
+                    {{ estadoLabel(c.estado) }}
+                  </span>
+                </div>
+
+                <div class="camion-card-body">
+                  <div class="camion-dato">
+                    <span class="dato-label">Recolector</span>
+                    <span class="dato-valor">{{ nombreRecolector(c.recolectorId) }}</span>
+                  </div>
+                  <div class="camion-dato">
+                    <span class="dato-label">Peso actual</span>
+                    <span class="dato-valor naranja">{{ c.pesoActual ?? 0 }} kg</span>
+                  </div>
+                  <div class="camion-dato">
+                    <span class="dato-label">Contenedor</span>
+                    <span class="dato-valor" [class.rojo]="c.contenedorLleno" [class.verde]="!c.contenedorLleno">
+                      {{ c.contenedorLleno ? 'Lleno' : 'Disponible' }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="camion-card-footer">
+                  <button class="btn-sm orange" (click)="editarCamion(c)">Editar</button>
+                  <button class="btn-sm red"    (click)="eliminarCamion(c.id)">Eliminar</button>
+                </div>
+
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    }
+
+    <!-- ══ FECHAS ══ -->
     @if (seccionActiva === 'fechas') {
       <div class="section">
         <div class="section-header">
@@ -260,10 +438,14 @@
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>Zona</label>
-                <input formControlName="zona" type="text" placeholder="Ej. Zona Norte"
-                  [class.input-error]="formFecha.get('zona')?.invalid && formFecha.get('zona')?.touched">
-                @if (formFecha.get('zona')?.invalid && formFecha.get('zona')?.touched) {
+                <label>Colonia</label>
+                <select formControlName="colonia" [class.input-error]="formFecha.get('colonia')?.invalid && formFecha.get('colonia')?.touched">
+                  <option value="">Selecciona colonia</option>
+                  @for (c of colonias; track c) {
+                    <option [value]="c">{{ c }}</option>
+                  }
+                </select>
+                @if (formFecha.get('colonia')?.invalid && formFecha.get('colonia')?.touched) {
                   <span class="error-msg">Requerido.</span>
                 }
               </div>
@@ -274,7 +456,7 @@
             </div>
             <div class="form-actions">
               @if (editandoFecha) {
-                <button class="btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
+                <button class="btn-secondary" (click)="cancelarEdicionFecha()">Cancelar</button>
               }
               <button class="btn-primary" (click)="guardarFecha()" [disabled]="cargando">
                 @if (cargando) { Guardando... } @else if (editandoFecha) { ACTUALIZAR FECHA } @else { + AGREGAR FECHA }
@@ -288,14 +470,14 @@
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>Fecha</th><th>Hora</th><th>Zona</th><th>Descripción</th><th>Acciones</th></tr>
+                <tr><th>Fecha</th><th>Hora</th><th>Colonia</th><th>Descripción</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 @for (f of fechas; track f.id) {
                   <tr>
                     <td data-label="Fecha">{{ f.fecha }}</td>
                     <td data-label="Hora">{{ f.hora }}</td>
-                    <td data-label="Zona"><span class="zona-badge">{{ f.zona }}</span></td>
+                    <td data-label="Colonia"><span class="zona-badge">{{ f.colonia }}</span></td>
                     <td data-label="Descripción">{{ f.descripcion || '—' }}</td>
                     <td data-label="Acciones" class="acciones">
                       <button class="btn-sm orange" (click)="editarFecha(f)">Editar</button>
@@ -310,7 +492,7 @@
       </div>
     }
 
-    <!-- ── PAGOS ── -->
+    <!-- ══ PAGOS ══ -->
     @if (seccionActiva === 'pagos') {
       <div class="section">
         <div class="section-header"><h2>Configuración de Cobro</h2></div>
@@ -382,7 +564,7 @@
       </div>
     }
 
-    <!-- ── MAPA ── -->
+    <!-- ══ MAPA ══ -->
     @if (seccionActiva === 'mapa') {
       <div class="section mapa-section">
         <div class="section-header">
@@ -436,7 +618,7 @@
 
   </main>
 
-  <!-- ── MODAL APROBAR RECOLECTOR ── -->
+  <!-- ══ MODAL APROBAR RECOLECTOR ══ -->
   @if (modalSolicitud) {
     <div class="modal-overlay" (click)="cerrarModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
@@ -449,8 +631,7 @@
         <div class="modal-body">
           <p class="modal-info"><strong>{{ modalSolicitud.nombre }}</strong></p>
           <p class="modal-info gray">{{ modalSolicitud.email }}</p>
-          <p class="modal-info gray">Zona: {{ modalSolicitud.zona }}</p>
-
+          <p class="modal-info gray">Colonia: {{ modalSolicitud.colonia || modalSolicitud.zona }}</p>
           <div class="form-group" style="margin-top: 1.2rem;">
             <label>Contraseña temporal</label>
             <input type="password" placeholder="Mínimo 6 caracteres"
