@@ -112,3 +112,16 @@ body.tema-claro .card-value {
   cursor: grab;
 }
 .esquina-handle:active { cursor: grabbing; }
+.pin-recolector {
+  width: 44px; height: 44px;
+  background: #2196F3;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #1565C0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.pin-recolector svg {
+  transform: rotate(45deg);
+  width: 22px; height: 22px; fill: #fff;
+}
