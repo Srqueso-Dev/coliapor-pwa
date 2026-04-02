@@ -185,7 +185,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       if (this.modoSeleccionMapa && this.rol === 'admin') {
         this.puntoSalida = [e.latlng.lat, e.latlng.lng];
         this.modoSeleccionMapa = false; // Apagar el modo selección tras hacer clic
-        this.toast.success('Punto de salida fijado');
+        this.toast.ok('Punto de salida fijado');
         
         // Poner el pin de inicio simulado
         const iconoRecolector = this.crearIconoRecolector();
@@ -276,7 +276,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   // ── Simulación (Solo Admin) ───────────────────────────
   activarSeleccionMapa() {
     this.modoSeleccionMapa = true;
-    this.toast.success('Haz clic en el mapa para el punto de salida');
+    this.toast.info('Haz clic en el mapa para fijar el punto de salida.');
   }
 
   cambiarVelocidad(event: Event) {
@@ -287,7 +287,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   actualizarColoniaSimulacion(event: Event) {
     const input = event.target as HTMLInputElement;
     this.simulacionColonia = input.value;
-    // Aquí en un futuro puedes recargar las casas de la nueva colonia
   }
 
   iniciarSimulacion() {
@@ -302,8 +301,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     // Inyectar el punto de salida real como inicio de la ruta simulada
     this.rutaSimulada[0] = this.puntoSalida;
 
-    // Calculamos el delay del simulador basado en la velocidad media
-    // A mayor velocidad, menor intervalo de tiempo entre saltos.
     const delayVelocidad = Math.max(500, (60000 / this.simulacionVelocidad));
 
     this.simuladorInterval = setInterval(() => {

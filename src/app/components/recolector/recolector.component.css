@@ -7,75 +7,95 @@
   color: var(--text-white);
 }
 
+/* ── NAVBAR ── */
 .navbar {
   position: sticky; top: 0; z-index: 10;
   background: var(--card-bg);
   border-bottom: 2px solid #FF6B00;
   display: flex; align-items: center;
-  padding: 0 1rem; height: 60px; gap: 12px;
+  padding: 0 1rem; height: 56px; gap: 10px;
 }
-
-.nav-logo { height: 36px; }
+.btn-back {
+  background: none; border: none; cursor: pointer;
+  padding: 6px; display: flex; align-items: center;
+  text-decoration: none; flex-shrink: 0;
+}
+.btn-back svg { width: 22px; height: 22px; fill: var(--text-white); }
+.nav-logo { height: 34px; flex-shrink: 0; }
 .rol-badge {
   flex: 1;
-  font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
   color: #FF6B00;
-  background: rgba(255,107,0,0.12);
+  background: rgba(255,107,0,0.1);
   padding: 4px 10px; border-radius: 20px;
-  width: fit-content;
+  width: fit-content; white-space: nowrap;
 }
-
 .btn-logout {
   background: none; border: none; cursor: pointer;
-  display: flex; align-items: center; padding: 6px;
+  padding: 6px; display: flex; align-items: center; flex-shrink: 0;
 }
 .btn-logout svg { width: 22px; height: 22px; fill: var(--text-gray); }
 .btn-logout:hover svg { fill: #ff4444; }
 
-.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--text-gray); }
-.spinner { width: 36px; height: 36px; border: 3px solid var(--border-color); border-top-color: #FF6B00; border-radius: 50%; animation: spin 0.8s linear infinite; }
+/* ── LOADING ── */
+.loading {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 60vh; gap: 12px; color: var(--text-gray);
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border-color);
+  border-top-color: #FF6B00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.content { padding: 1.2rem; display: flex; flex-direction: column; gap: 1.2rem; max-width: 520px; margin: 0 auto; }
+/* ── CONTENIDO ── */
+.content {
+  padding: 1.2rem;
+  display: flex; flex-direction: column; gap: 1.2rem;
+  max-width: 560px; margin: 0 auto;
+}
 
-.bienvenida { padding: 0.5rem 0; }
-.bienvenida-nombre { font-size: 1.3rem; font-weight: 700; color: var(--text-white); }
-.bienvenida-zona { font-size: 0.88rem; color: var(--text-gray); margin-top: 4px; }
-.bienvenida-zona strong { color: #FF6B00; }
+/* ── BIENVENIDA ── */
+.bienvenida { padding: 0.4rem 0; }
+.bienvenida-nombre { font-size: 1.25rem; font-weight: 700; color: var(--text-white); }
+.bienvenida-colonia { font-size: 0.85rem; color: var(--text-gray); margin-top: 4px; }
+.bienvenida-colonia strong { color: #FF6B00; }
 
+/* ── CARDS ── */
 .section-card {
   background: var(--card-bg);
   border-radius: 14px; padding: 1.2rem;
   border: 1px solid var(--border-color);
 }
-
 .section-title {
-  font-size: 0.8rem; font-weight: 700;
+  font-size: 0.78rem; font-weight: 700;
   color: #FF6B00; text-transform: uppercase;
   letter-spacing: 1px; margin-bottom: 1rem;
 }
+.empty-msg { color: var(--text-gray); font-size: 0.86rem; text-align: center; padding: 1rem 0; }
 
-.empty-msg { color: var(--text-gray); font-size: 0.88rem; text-align: center; padding: 1rem 0; }
-
-/* Camión */
+/* ── CAMIÓN ── */
 .camion-header {
   display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;
 }
 .camion-icono {
-  width: 44px; height: 44px; border-radius: 10px;
-  background: rgba(255,107,0,0.15);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
 }
-.camion-icono svg { width: 26px; height: 26px; fill: #FF6B00; }
-.camion-placa { font-size: 1rem; font-weight: 700; color: var(--text-white); }
-.camion-modelo { font-size: 0.8rem; color: var(--text-gray); }
-.estado-badge {
+.camion-icono svg { width: 26px; height: 26px; }
+.camion-placa  { font-size: 1rem; font-weight: 700; color: var(--text-white); }
+.camion-modelo { font-size: 0.78rem; color: var(--text-gray); }
+.estado-pill {
   margin-left: auto; padding: 4px 12px;
   border-radius: 20px; border: 1px solid;
-  font-size: 0.75rem; font-weight: 700;
+  font-size: 0.72rem; font-weight: 700; white-space: nowrap;
 }
 
-/* Sensores */
+/* ── SENSORES ── */
 .sensores-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .sensor-card {
@@ -83,62 +103,116 @@
   border-radius: 10px; padding: 14px;
   border: 1px solid var(--border-color);
 }
-.sensor-label { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 6px; }
+.sensor-label { font-size: 0.72rem; color: var(--text-gray); margin-bottom: 6px; }
 .sensor-valor {
-  font-size: 1.2rem; font-weight: 700;
-  display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+  font-size: 1.15rem; font-weight: 700;
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 4px;
 }
-.sensor-valor span { font-size: 0.8rem; font-weight: 400; }
-.sensor-valor svg { width: 20px; height: 20px; }
+.sensor-valor span { font-size: 0.78rem; font-weight: 400; }
+.sensor-valor svg { width: 19px; height: 19px; }
 .sensor-valor.naranja { color: #FF6B00; }
 .sensor-valor.rojo    { color: #ff4444; }
 .sensor-valor.rojo svg { fill: #ff4444; }
 .sensor-valor.verde   { color: #00E676; }
 .sensor-valor.verde svg { fill: #00E676; }
-.sensor-valor.gris    { color: var(--text-gray); font-size: 0.9rem; }
-.sensor-sub { font-size: 0.72rem; color: var(--text-gray); }
+.sensor-valor.gris    { color: var(--text-gray); font-size: 0.88rem; }
+.sensor-sub { font-size: 0.7rem; color: var(--text-gray); }
 
-.ultima-act { font-size: 0.75rem; color: var(--text-gray); margin-top: 10px; text-align: right; }
+.ultima-act { font-size: 0.72rem; color: var(--text-gray); margin-top: 10px; text-align: right; }
 
-/* Fechas */
+/* ── FECHAS ── */
 .fechas-list { display: flex; flex-direction: column; gap: 10px; }
-.fecha-item { display: flex; align-items: flex-start; gap: 12px; }
+.fecha-item  { display: flex; align-items: flex-start; gap: 12px; }
 .fecha-icono {
-  width: 36px; height: 36px; border-radius: 8px;
-  background: rgba(0,230,118,0.1); flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(0,230,118,0.1);
   display: flex; align-items: center; justify-content: center;
 }
 .fecha-icono svg { width: 20px; height: 20px; fill: #00E676; }
-.fecha-dia { font-size: 0.95rem; font-weight: 600; color: var(--text-white); }
-.fecha-hora { font-size: 0.8rem; color: var(--text-gray); }
-.fecha-desc { font-size: 0.78rem; color: var(--text-gray); margin-top: 2px; font-style: italic; }
+.fecha-dia  { font-size: 0.92rem; font-weight: 600; color: var(--text-white); }
+.fecha-hora { font-size: 0.78rem; color: var(--text-gray); }
+.fecha-desc { font-size: 0.75rem; color: var(--text-gray); margin-top: 2px; font-style: italic; }
 
-/* Mapa */
-.mapa-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
-.mapa-header .section-title { margin-bottom: 0; }
+/* ── MAPA ── */
+.mapa-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 0.75rem;
+}
+.mapa-sub { font-size: 0.78rem; color: var(--text-gray); }
+
 .btn-toggle-mapa {
   background: none; border: 1px solid #FF6B00;
-  color: #FF6B00; padding: 5px 14px;
-  border-radius: 20px; font-size: 0.82rem; cursor: pointer;
-  transition: all 0.2s;
+  color: #FF6B00; padding: 6px 14px;
+  border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+  transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
 }
 .btn-toggle-mapa:hover { background: #FF6B00; color: #fff; }
 
+.mapa-leyenda {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.leyenda-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--text-gray);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.verde   { background: #00E676; }
+.dot.naranja { background: #FF6B00; }
+.dot.azul    { background: #2196F3; }
+
 #mapa-recolector {
-  height: 260px; border-radius: 10px;
-  border: 1px solid var(--border-color); z-index: 0;
+  height: 300px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  z-index: 0;
 }
 
-/* Pin del recolector en el mapa */
+/* ── BOTONES RUTA ── */
+.ruta-acciones {
+  display: flex; justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.btn-iniciar-ruta {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 24px;
+  background: linear-gradient(45deg, #00b248, #00E676);
+  border: none; border-radius: 10px;
+  color: #1a1a1a; font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; transition: transform 0.2s;
+  letter-spacing: 0.5px;
+}
+.btn-iniciar-ruta svg { width: 18px; height: 18px; fill: #1a1a1a; }
+.btn-iniciar-ruta:hover { transform: translateY(-2px); }
+
+.btn-detener-ruta {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 24px;
+  background: rgba(255,68,68,0.12);
+  border: 1px solid rgba(255,68,68,0.3);
+  border-radius: 10px;
+  color: #ff6b6b; font-weight: 700; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-detener-ruta svg { width: 18px; height: 18px; fill: #ff6b6b; }
+.btn-detener-ruta:hover { background: rgba(255,68,68,0.2); }
+
+/* ── PIN RECOLECTOR (global en styles.css) ── */
+/* Añadir esto en styles.css si no existe: */
+/*
 .pin-recolector {
   width: 44px; height: 44px;
-  background: #FF6B00; border-radius: 50% 50% 50% 0;
+  background: #2196F3;
+  border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid #c44000;
+  border: 2px solid #1565C0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
 }
 .pin-recolector svg {
   transform: rotate(45deg);
   width: 22px; height: 22px; fill: #fff;
 }
+*/
