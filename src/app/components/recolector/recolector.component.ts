@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, collection, query, where, getDocs, onSnapshot } from '@angular/fire/firestore';
+import { Database, ref, set, remove, onDisconnect } from '@angular/fire/database';
 import { ToastService } from '../toast/toast.service';
 import * as L from 'leaflet';
 import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
@@ -17,6 +18,7 @@ import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
 export class RecolectorComponent implements OnInit, OnDestroy {
   private auth      = inject(Auth);
   private firestore = inject(Firestore);
+  private rtdb      = inject(Database);
   private toast     = inject(ToastService);
 
   nombre   = '';
@@ -37,6 +39,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   private mapa!: L.Map;
   private capaMarcadores!: L.LayerGroup;
   private pinRecolector!: L.Marker;
+  private lineaRuta: L.Polyline | null = null;
   private watchId: number | null = null;
   mapaActivo    = false;
   enRuta        = false;
@@ -47,17 +50,14 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   simulacionColonia: string = '';
   puntoSalida: [number, number] | null = null;
   modoSeleccionMapa: boolean = false;
+  cargandoRuta: boolean = false;
   private simuladorInterval: any;
   private indiceSimulacion = 0;
-  
-  // Ruta de prueba (En el futuro esto vendrá de OSRM)
-  private rutaSimulada: [number, number][] = [
-    [20.6534, -103.2340],
-    [20.6540, -103.2340],
-    [20.6540, -103.2350],
-    [20.6530, -103.2350],
-    [20.6530, -103.2340]
-  ];
+  private rutaSimulada: [number, number][] = [];
+
+  // Variables RTDB
+  private transmisionActiva = false;
+  private ultimoEnvioRTDB = 0;
 
   ngOnInit() {
     this.auth.onAuthStateChanged(async user => {
@@ -245,6 +245,39 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── Firebase Realtime Database ────────────────────────
+  async transmitirUbicacion(lat: number, lng: number) {
+    const ahora = Date.now();
+    // Throttle: Limita el envío a 1 vez cada 2 segundos.
+    if (ahora - this.ultimoEnvioRTDB < 2000) return; 
+    this.ultimoEnvioRTDB = ahora;
+
+    const ubicacionRef = ref(this.rtdb, `camiones_activos/${this.uid}`);
+    
+    if (!this.transmisionActiva) {
+      // Si la app se cierra, Firebase borra automáticamente este nodo
+      onDisconnect(ubicacionRef).remove();
+      this.transmisionActiva = true;
+    }
+    
+    await set(ubicacionRef, { 
+      lat, 
+      lng, 
+      timestamp: ahora,
+      colonia: this.simulacionColonia || this.colonia,
+      rol: this.rol
+    });
+  }
+
+  async detenerTransmision() {
+    if (this.transmisionActiva) {
+      const ubicacionRef = ref(this.rtdb, `camiones_activos/${this.uid}`);
+      await remove(ubicacionRef);
+      onDisconnect(ubicacionRef).cancel(); // Retirar el listener de desconexión
+      this.transmisionActiva = false;
+    }
+  }
+
   // ── GPS Real (Solo Recolector) ────────────────────────
   iniciarRuta() {
     this.enRuta = true;
@@ -268,6 +301,10 @@ export class RecolectorComponent implements OnInit, OnDestroy {
           .addTo(this.mapa);
       }
       this.mapa.setView([lat, lng], 17);
+      
+      // Enviar a Realtime Database
+      this.transmitirUbicacion(lat, lng);
+
     }, () => {
       this.toast.error('No se pudo obtener tu ubicación.');
     }, { enableHighAccuracy: true });
@@ -288,19 +325,42 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     const select = event.target as HTMLSelectElement;
     this.simulacionColonia = select.value;
     
-    // Al cambiar la colonia, recargamos las casas del mapa
     await this.cargarUsuariosColonia();
     this.pintarCasasColonia();
 
-    // Limpiamos el pin de salida para evitar que inicie en otra colonia
     this.puntoSalida = null;
     if (this.pinRecolector && this.mapa) {
       this.mapa.removeLayer(this.pinRecolector);
       (this.pinRecolector as any) = null;
     }
+    if (this.lineaRuta && this.mapa) {
+      this.mapa.removeLayer(this.lineaRuta);
+      this.lineaRuta = null;
+    }
   }
 
-  iniciarSimulacion() {
+  async calcularRutaOSRM(): Promise<[number, number][]> {
+    const coordenadas = [];
+    coordenadas.push(`${this.puntoSalida![1]},${this.puntoSalida![0]}`); 
+
+    const casasLimitadas = this.usuariosGeo.slice(0, 90);
+    casasLimitadas.forEach(u => {
+      coordenadas.push(`${u.domicilio.lng},${u.domicilio.lat}`);
+    });
+
+    const coordString = coordenadas.join(';');
+    const url = `https://router.project-osrm.org/trip/v1/driving/${coordString}?roundtrip=false&source=first&geometries=geojson`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.code !== 'Ok') throw new Error('OSRM no pudo calcular la ruta');
+
+    const geometry = data.trips[0].geometry.coordinates;
+    return geometry.map((punto: any) => [punto[1], punto[0]]);
+  }
+
+  async iniciarSimulacion() {
     if (this.usuariosGeo.length === 0) {
       this.toast.info('No es necesario entrar en ruta');
       return;
@@ -311,31 +371,57 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.enRuta = true;
-    this.indiceSimulacion = 0;
-    
-    this.rutaSimulada[0] = this.puntoSalida;
+    this.cargandoRuta = true;
 
-    const delayVelocidad = Math.max(500, (60000 / this.simulacionVelocidad));
-
-    this.simuladorInterval = setInterval(() => {
-      this.indiceSimulacion++;
+    try {
+      this.rutaSimulada = await this.calcularRutaOSRM();
       
-      if (this.indiceSimulacion >= this.rutaSimulada.length) {
-        this.indiceSimulacion = 0; 
-      }
+      if (this.lineaRuta) this.mapa.removeLayer(this.lineaRuta);
+      this.lineaRuta = L.polyline(this.rutaSimulada, { 
+        color: '#2196F3', weight: 4, opacity: 0.8 
+      }).addTo(this.mapa);
 
-      const nuevasCoords = this.rutaSimulada[this.indiceSimulacion];
-      this.pinRecolector.setLatLng(nuevasCoords);
-      this.mapa.panTo(nuevasCoords); 
+      this.enRuta = true;
+      this.indiceSimulacion = 0;
       
-    }, delayVelocidad);
+      const delayVelocidad = Math.max(30, (3000 / this.simulacionVelocidad));
+
+      this.simuladorInterval = setInterval(() => {
+        this.indiceSimulacion++;
+        
+        if (this.indiceSimulacion >= this.rutaSimulada.length) {
+          this.detenerRuta();
+          this.toast.ok('Simulación terminada. Ruta completada.');
+          return;
+        }
+
+        const nuevasCoords = this.rutaSimulada[this.indiceSimulacion];
+        this.pinRecolector.setLatLng(nuevasCoords);
+        
+        if (this.indiceSimulacion % 5 === 0) {
+          this.mapa.panTo(nuevasCoords, { animate: true, duration: 0.5 }); 
+        }
+
+        // Enviar a Realtime Database
+        this.transmitirUbicacion(nuevasCoords[0], nuevasCoords[1]);
+        
+      }, delayVelocidad);
+
+    } catch (error) {
+      console.error(error);
+      this.toast.error('Error al calcular la ruta. Verifica tu conexión.');
+    } finally {
+      this.cargandoRuta = false;
+    }
   }
 
   detenerRuta() {
     this.enRuta = false;
     this.modoSeleccionMapa = false;
     
+    // Detener servicios
+    this.detenerTransmision();
+
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
@@ -349,6 +435,11 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     if (this.pinRecolector && this.mapa) {
       this.mapa.removeLayer(this.pinRecolector);
       (this.pinRecolector as any) = null;
+    }
+
+    if (this.lineaRuta && this.mapa) {
+      this.mapa.removeLayer(this.lineaRuta);
+      this.lineaRuta = null;
     }
   }
 

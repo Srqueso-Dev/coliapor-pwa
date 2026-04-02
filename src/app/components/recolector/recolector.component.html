@@ -41,6 +41,7 @@
               <select 
                 [value]="simulacionColonia" 
                 (change)="actualizarColoniaSimulacion($event)"
+                [disabled]="cargandoRuta || enRuta"
                 style="width: 100%; padding: 8px; border-radius: 6px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-white);">
                 <option value="">Selecciona colonia</option>
                 @for (c of colonias; track c) {
@@ -54,11 +55,17 @@
               <input type="range" min="10" max="80" step="5" 
                      [value]="simulacionVelocidad"
                      (input)="cambiarVelocidad($event)"
+                     [disabled]="cargandoRuta || enRuta"
                      style="width: 100%;">
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 5px;">
-              <button class="btn-toggle-mapa" style="flex: 1;" [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'" [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'" [style.border-color]="'#2196F3'" (click)="activarSeleccionMapa()">
+              <button class="btn-toggle-mapa" style="flex: 1;" 
+                      [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'" 
+                      [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'" 
+                      [style.border-color]="'#2196F3'" 
+                      (click)="activarSeleccionMapa()"
+                      [disabled]="cargandoRuta || enRuta">
                 {{ puntoSalida ? '📍 Cambiar origen' : '📍 Fijar origen en mapa' }}
               </button>
             </div>
@@ -150,9 +157,15 @@
             @if (!enRuta) {
               <div style="display: flex; gap: 10px; width: 100%;">
                 @if (rol === 'admin') {
-                  <button class="btn-iniciar-ruta" style="flex: 1; background: linear-gradient(45deg, #2196F3, #64B5F6); justify-content: center;" (click)="iniciarSimulacion()">
-                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    Simular
+                  <button class="btn-iniciar-ruta" 
+                          style="flex: 1; background: linear-gradient(45deg, #2196F3, #64B5F6); justify-content: center;" 
+                          (click)="iniciarSimulacion()"
+                          [disabled]="cargandoRuta">
+                    @if (cargandoRuta) {
+                      <div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div> Calculando...
+                    } @else {
+                      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Simular
+                    }
                   </button>
                 } @else {
                   <button class="btn-iniciar-ruta" style="flex: 1; justify-content: center;" (click)="iniciarRuta()">
