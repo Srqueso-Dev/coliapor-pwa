@@ -239,9 +239,10 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     return L.divIcon({
       className: '',
       html: `<div class="pin-recolector" style="width: 30px; height: 30px;">
-               <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+               <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; transform: rotate(45deg); fill: white;"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
              </div>`,
-      iconSize: [30, 30], iconAnchor: [15, 30]
+      iconSize: [30, 30], 
+      iconAnchor: [15, 15] 
     });
   }
 
@@ -273,7 +274,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     if (this.transmisionActiva) {
       const ubicacionRef = ref(this.rtdb, `camiones_activos/${this.uid}`);
       await remove(ubicacionRef);
-      onDisconnect(ubicacionRef).cancel(); // Retirar el listener de desconexión
+      onDisconnect(ubicacionRef).cancel(); 
       this.transmisionActiva = false;
     }
   }
@@ -349,7 +350,8 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     });
 
     const coordString = coordenadas.join(';');
-    const url = `https://router.project-osrm.org/trip/v1/driving/${coordString}?roundtrip=false&source=first&geometries=geojson`;
+    // &overview=full para obtener la geometría detallada calle por calle
+    const url = `https://router.project-osrm.org/trip/v1/driving/${coordString}?roundtrip=false&source=first&geometries=geojson&overview=full`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -384,7 +386,8 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       this.enRuta = true;
       this.indiceSimulacion = 0;
       
-      const delayVelocidad = Math.max(30, (3000 / this.simulacionVelocidad));
+      // Ajuste de velocidad para los cientos de puntos detallados que devuelve OSRM
+      const delayVelocidad = Math.max(80, (10000 / this.simulacionVelocidad));
 
       this.simuladorInterval = setInterval(() => {
         this.indiceSimulacion++;
@@ -398,11 +401,12 @@ export class RecolectorComponent implements OnInit, OnDestroy {
         const nuevasCoords = this.rutaSimulada[this.indiceSimulacion];
         this.pinRecolector.setLatLng(nuevasCoords);
         
-        if (this.indiceSimulacion % 5 === 0) {
+        // Centrar la cámara suavemente cada ciertos puntos
+        if (this.indiceSimulacion % 8 === 0) {
           this.mapa.panTo(nuevasCoords, { animate: true, duration: 0.5 }); 
         }
 
-        // Enviar a Realtime Database
+        // Enviar a Realtime Database (Se mantiene el throttle de 2 segundos internamente)
         this.transmitirUbicacion(nuevasCoords[0], nuevasCoords[1]);
         
       }, delayVelocidad);
@@ -419,7 +423,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     this.enRuta = false;
     this.modoSeleccionMapa = false;
     
-    // Detener servicios
+    // Detener servicios de RTDB
     this.detenerTransmision();
 
     if (this.watchId !== null) {
