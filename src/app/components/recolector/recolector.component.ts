@@ -28,14 +28,11 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   cargando = true;
   colonias = COLONIAS_TONALA;
 
-  // Camión
   camion: any = null;
   private unsubCamion: (() => void) | null = null;
 
-  // Fechas
   fechasColonia: any[] = [];
 
-  // Mapa
   private mapa!: L.Map;
   private capaMarcadores!: L.LayerGroup;
   private pinRecolector!: L.Marker;
@@ -45,27 +42,28 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   enRuta        = false;
   usuariosGeo: any[] = [];
 
-  // Variables de Simulación (Solo Admin)
-  simulacionVelocidad: number = 30; 
-  simulacionColonia: string = '';
+  // Simulación (Solo Admin)
+  simulacionVelocidad = 30;
+  simulacionColonia   = '';
   puntoSalida: [number, number] | null = null;
-  modoSeleccionMapa: boolean = false;
-  cargandoRuta: boolean = false;
+  modoSeleccionMapa   = false;
+  cargandoRuta        = false;
   private simuladorInterval: any;
   private indiceSimulacion = 0;
   private rutaSimulada: [number, number][] = [];
 
-  // Variables RTDB
+  // RTDB
   private transmisionActiva = false;
-  private ultimoEnvioRTDB = 0;
+  private ultimoEnvioRTDB   = 0;
+  private onDisconnectRegistrado = false; // ← FIX: solo registrar onDisconnect una vez
 
   ngOnInit() {
     this.auth.onAuthStateChanged(async user => {
-      if (!user) { this.irAlLogin(); return; }
+      if (!user) { window.location.href = '/login'; return; }
       this.uid = user.uid;
 
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      if (!snap.exists()) { this.irAlLogin(); return; }
+      if (!snap.exists()) { window.location.href = '/login'; return; }
 
       const data = snap.data();
       this.rol = data['rol'] || '';
@@ -77,7 +75,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
       this.nombre  = data['nombre']  || '';
       this.colonia = data['colonia'] || '';
-      this.simulacionColonia = this.colonia; 
+      this.simulacionColonia = this.colonia;
 
       await Promise.all([
         this.cargarCamion(user.uid),
@@ -95,10 +93,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     this.detenerRuta();
   }
 
-  irAlLogin() {
-    window.location.href = '/login';
-  }
-
   // ── Camión ────────────────────────────────────────────
   async cargarCamion(uid: string) {
     const snap = await getDocs(query(
@@ -106,7 +100,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       where('recolectorId', '==', uid)
     ));
     if (snap.empty) { this.camion = null; return; }
-
     const camionDoc = snap.docs[0];
     this.unsubCamion = onSnapshot(doc(this.firestore, 'camiones', camionDoc.id), s => {
       if (s.exists()) this.camion = { id: s.id, ...s.data() };
@@ -138,16 +131,17 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       .slice(0, 5);
   }
 
-  // ── Usuarios de la colonia (para el mapa) ─────────────
+  // ── Usuarios de la colonia ────────────────────────────
   async cargarUsuariosColonia() {
-    if (!this.simulacionColonia) return;
+    const coloniaFiltro = this.simulacionColonia || this.colonia;
+    if (!coloniaFiltro) return;
     const snap = await getDocs(collection(this.firestore, 'usuarios'));
     this.usuariosGeo = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter((u: any) =>
         u.domicilio?.lat &&
         u.domicilio?.lng &&
-        u.domicilio?.colonia === this.simulacionColonia
+        u.domicilio?.colonia === coloniaFiltro
       );
   }
 
@@ -156,8 +150,8 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
 
-  pagoClave(usuario: any): boolean {
-    return !!(usuario.pagos && usuario.pagos[this.clavesMes]);
+  pagoClave(u: any): boolean {
+    return !!(u.pagos && u.pagos[this.clavesMes]);
   }
 
   // ── Mapa ──────────────────────────────────────────────
@@ -179,26 +173,28 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap', maxZoom: 21
     }).addTo(this.mapa);
 
+    // FIX: crear capaMarcadores ANTES de pintarCasasColonia
     this.capaMarcadores = L.layerGroup().addTo(this.mapa);
     this.pintarCasasColonia();
 
     this.mapa.on('click', (e: L.LeafletMouseEvent) => {
       if (this.modoSeleccionMapa && this.rol === 'admin') {
         this.puntoSalida = [e.latlng.lat, e.latlng.lng];
-        this.modoSeleccionMapa = false; 
-        this.toast.ok('Punto de salida fijado');
-        
-        const iconoRecolector = this.crearIconoRecolector();
+        this.modoSeleccionMapa = false;
+        this.toast.ok('Punto de salida fijado.');
+
+        const icono = this.crearIconoRecolector();
         if (this.pinRecolector) {
           this.pinRecolector.setLatLng(this.puntoSalida);
         } else {
-          this.pinRecolector = L.marker(this.puntoSalida, { icon: iconoRecolector }).addTo(this.mapa);
+          this.pinRecolector = L.marker(this.puntoSalida, { icon: icono }).addTo(this.mapa);
         }
       }
     });
   }
 
   pintarCasasColonia() {
+    // FIX: guard explícito — no proceder si el mapa o la capa no están listos
     if (!this.mapa || !this.capaMarcadores) return;
     this.capaMarcadores.clearLayers();
 
@@ -225,7 +221,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
             ${pagado ? '✓ Pagó este mes' : '⚠ Pendiente de pago'}
           </span>
         `);
-
       this.capaMarcadores.addLayer(marker);
     });
 
@@ -238,32 +233,30 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   crearIconoRecolector() {
     return L.divIcon({
       className: '',
-      html: `<div class="pin-recolector" style="width: 30px; height: 30px;">
-               <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; transform: rotate(45deg); fill: white;"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+      html: `<div class="pin-recolector">
+               <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
              </div>`,
-      iconSize: [30, 30], 
-      iconAnchor: [15, 15] 
+      iconSize: [30, 30], iconAnchor: [15, 15]
     });
   }
 
-  // ── Firebase Realtime Database ────────────────────────
+  // ── RTDB ──────────────────────────────────────────────
   async transmitirUbicacion(lat: number, lng: number) {
     const ahora = Date.now();
-    // Throttle: Limita el envío a 1 vez cada 2 segundos.
-    if (ahora - this.ultimoEnvioRTDB < 2000) return; 
+    if (ahora - this.ultimoEnvioRTDB < 2000) return;
     this.ultimoEnvioRTDB = ahora;
 
     const ubicacionRef = ref(this.rtdb, `camiones_activos/${this.uid}`);
-    
-    if (!this.transmisionActiva) {
-      // Si la app se cierra, Firebase borra automáticamente este nodo
+
+    // FIX: registrar onDisconnect solo una vez por sesión de ruta
+    if (!this.onDisconnectRegistrado) {
       onDisconnect(ubicacionRef).remove();
-      this.transmisionActiva = true;
+      this.onDisconnectRegistrado = true;
     }
-    
-    await set(ubicacionRef, { 
-      lat, 
-      lng, 
+
+    this.transmisionActiva = true;
+    await set(ubicacionRef, {
+      lat, lng,
       timestamp: ahora,
       colonia: this.simulacionColonia || this.colonia,
       rol: this.rol
@@ -274,12 +267,12 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     if (this.transmisionActiva) {
       const ubicacionRef = ref(this.rtdb, `camiones_activos/${this.uid}`);
       await remove(ubicacionRef);
-      onDisconnect(ubicacionRef).cancel(); 
       this.transmisionActiva = false;
+      this.onDisconnectRegistrado = false; // reset para la próxima ruta
     }
   }
 
-  // ── GPS Real (Solo Recolector) ────────────────────────
+  // ── GPS Real (Recolector) ─────────────────────────────
   iniciarRuta() {
     this.enRuta = true;
     if (!navigator.geolocation) {
@@ -287,48 +280,48 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       this.enRuta = false;
       return;
     }
-
-    const iconoRecolector = this.crearIconoRecolector();
-
+    const icono = this.crearIconoRecolector();
     this.watchId = navigator.geolocation.watchPosition(pos => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
-
       if (this.pinRecolector) {
         this.pinRecolector.setLatLng([lat, lng]);
       } else {
-        this.pinRecolector = L.marker([lat, lng], { icon: iconoRecolector })
+        this.pinRecolector = L.marker([lat, lng], { icon: icono })
           .bindPopup('Tu ubicación actual')
           .addTo(this.mapa);
+        this.mapa.setView([lat, lng], 17);
       }
-      this.mapa.setView([lat, lng], 17);
-      
-      // Enviar a Realtime Database
       this.transmitirUbicacion(lat, lng);
-
     }, () => {
       this.toast.error('No se pudo obtener tu ubicación.');
     }, { enableHighAccuracy: true });
   }
 
-  // ── Simulación (Solo Admin) ───────────────────────────
+  // ── Simulación (Admin) ────────────────────────────────
   activarSeleccionMapa() {
+    if (!this.mapaActivo) {
+      this.toast.info('Abre el mapa primero.');
+      return;
+    }
     this.modoSeleccionMapa = true;
     this.toast.info('Haz clic en el mapa para fijar el punto de salida.');
   }
 
   cambiarVelocidad(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.simulacionVelocidad = Number(input.value);
+    this.simulacionVelocidad = Number((event.target as HTMLInputElement).value);
   }
 
   async actualizarColoniaSimulacion(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    this.simulacionColonia = select.value;
-    
+    this.simulacionColonia = (event.target as HTMLSelectElement).value;
     await this.cargarUsuariosColonia();
-    this.pintarCasasColonia();
 
+    // FIX: solo pintar si el mapa ya está activo e inicializado
+    if (this.mapaActivo && this.mapa && this.capaMarcadores) {
+      this.pintarCasasColonia();
+    }
+
+    // Limpiar punto de salida y ruta al cambiar colonia
     this.puntoSalida = null;
     if (this.pinRecolector && this.mapa) {
       this.mapa.removeLayer(this.pinRecolector);
@@ -341,79 +334,81 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   }
 
   async calcularRutaOSRM(): Promise<[number, number][]> {
-    const coordenadas = [];
-    coordenadas.push(`${this.puntoSalida![1]},${this.puntoSalida![0]}`); 
+    // FIX: OSRM público soporta máximo ~10 waypoints en /trip/
+    // Limitamos a 9 casas + 1 punto de salida = 10 total
+    const MAX_WAYPOINTS = 9;
+    const casas = this.usuariosGeo.slice(0, MAX_WAYPOINTS);
 
-    const casasLimitadas = this.usuariosGeo.slice(0, 90);
-    casasLimitadas.forEach(u => {
-      coordenadas.push(`${u.domicilio.lng},${u.domicilio.lat}`);
-    });
+    const coordenadas = [
+      `${this.puntoSalida![1]},${this.puntoSalida![0]}`,
+      ...casas.map(u => `${u.domicilio.lng},${u.domicilio.lat}`)
+    ];
 
-    const coordString = coordenadas.join(';');
-    // &overview=full para obtener la geometría detallada calle por calle
-    const url = `https://router.project-osrm.org/trip/v1/driving/${coordString}?roundtrip=false&source=first&geometries=geojson&overview=full`;
+    const url = `https://router.project-osrm.org/trip/v1/driving/${coordenadas.join(';')}?roundtrip=false&source=first&geometries=geojson&overview=full`;
 
-    const response = await fetch(url);
-    const data = await response.json();
+    const res  = await fetch(url);
+    const data = await res.json();
 
-    if (data.code !== 'Ok') throw new Error('OSRM no pudo calcular la ruta');
+    if (data.code !== 'Ok') throw new Error(`OSRM error: ${data.code}`);
 
-    const geometry = data.trips[0].geometry.coordinates;
-    return geometry.map((punto: any) => [punto[1], punto[0]]);
+    return (data.trips[0].geometry.coordinates as [number, number][])
+      .map(p => [p[1], p[0]]);
   }
 
   async iniciarSimulacion() {
     if (this.usuariosGeo.length === 0) {
-      this.toast.info('No es necesario entrar en ruta');
+      this.toast.info('No hay casas en esta colonia.');
       return;
     }
-
     if (!this.puntoSalida) {
-      this.toast.error('Debes seleccionar un punto de salida en el mapa primero.');
+      this.toast.error('Fija un punto de salida en el mapa primero.');
       return;
     }
 
     this.cargandoRuta = true;
-
     try {
       this.rutaSimulada = await this.calcularRutaOSRM();
-      
+
       if (this.lineaRuta) this.mapa.removeLayer(this.lineaRuta);
-      this.lineaRuta = L.polyline(this.rutaSimulada, { 
-        color: '#2196F3', weight: 4, opacity: 0.8 
+      this.lineaRuta = L.polyline(this.rutaSimulada, {
+        color: '#2196F3', weight: 4, opacity: 0.8
       }).addTo(this.mapa);
 
       this.enRuta = true;
       this.indiceSimulacion = 0;
-      
-      // Ajuste de velocidad para los cientos de puntos detallados que devuelve OSRM
-      const delayVelocidad = Math.max(80, (10000 / this.simulacionVelocidad));
+
+      // FIX: delay basado en distancia real entre puntos para velocidad constante
+      // OSRM devuelve puntos cada ~5m en promedio.
+      // A velocidadKmh km/h → m/s = velocidad/3.6
+      // tiempo por punto (5m) = 5 / (velocidad/3.6) * 1000 ms
+      const msPerPunto = (5 / (this.simulacionVelocidad / 3.6)) * 1000;
+      const delay = Math.max(50, Math.min(msPerPunto, 500));
+
+      // Colocar el pin en el punto de salida antes de arrancar
+      if (!this.pinRecolector) {
+        this.pinRecolector = L.marker(this.rutaSimulada[0], { icon: this.crearIconoRecolector() })
+          .addTo(this.mapa);
+      } else {
+        this.pinRecolector.setLatLng(this.rutaSimulada[0]);
+      }
 
       this.simuladorInterval = setInterval(() => {
         this.indiceSimulacion++;
-        
         if (this.indiceSimulacion >= this.rutaSimulada.length) {
           this.detenerRuta();
           this.toast.ok('Simulación terminada. Ruta completada.');
           return;
         }
-
-        const nuevasCoords = this.rutaSimulada[this.indiceSimulacion];
-        this.pinRecolector.setLatLng(nuevasCoords);
-        
-        // Centrar la cámara suavemente cada ciertos puntos
-        if (this.indiceSimulacion % 8 === 0) {
-          this.mapa.panTo(nuevasCoords, { animate: true, duration: 0.5 }); 
+        const coords = this.rutaSimulada[this.indiceSimulacion];
+        this.pinRecolector.setLatLng(coords);
+        if (this.indiceSimulacion % 10 === 0) {
+          this.mapa.panTo(coords, { animate: true, duration: 0.5 });
         }
+        this.transmitirUbicacion(coords[0], coords[1]);
+      }, delay);
 
-        // Enviar a Realtime Database (Se mantiene el throttle de 2 segundos internamente)
-        this.transmitirUbicacion(nuevasCoords[0], nuevasCoords[1]);
-        
-      }, delayVelocidad);
-
-    } catch (error) {
-      console.error(error);
-      this.toast.error('Error al calcular la ruta. Verifica tu conexión.');
+    } catch {
+      this.toast.error('Error al calcular la ruta. Verifica tu conexión o reduce las casas.');
     } finally {
       this.cargandoRuta = false;
     }
@@ -422,25 +417,20 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   detenerRuta() {
     this.enRuta = false;
     this.modoSeleccionMapa = false;
-    
-    // Detener servicios de RTDB
     this.detenerTransmision();
 
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
-    
     if (this.simuladorInterval) {
       clearInterval(this.simuladorInterval);
       this.simuladorInterval = null;
     }
-
     if (this.pinRecolector && this.mapa) {
       this.mapa.removeLayer(this.pinRecolector);
       (this.pinRecolector as any) = null;
     }
-
     if (this.lineaRuta && this.mapa) {
       this.mapa.removeLayer(this.lineaRuta);
       this.lineaRuta = null;
@@ -448,6 +438,8 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   }
 
   async cerrarSesion() {
+    const ok = await this.toast.confirmar('¿Cerrar sesión?');
+    if (!ok) return;
     await signOut(this.auth);
     window.location.href = '/login';
   }

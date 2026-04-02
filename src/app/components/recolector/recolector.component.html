@@ -26,53 +26,61 @@
           @if (rol === 'admin') { Vista de recolector } @else { Hola, {{ nombre }} }
         </h1>
         <p class="bienvenida-colonia">
-          Colonia asignada:
-          <strong>{{ colonia || '—' }}</strong>
+          Colonia asignada: <strong>{{ colonia || '—' }}</strong>
         </p>
       </div>
 
+      <!-- PANEL SIMULACIÓN (Solo Admin) -->
       @if (rol === 'admin') {
-        <div class="section-card" style="border-color: #2196F3;">
-          <h2 class="section-title" style="color: #2196F3;">Panel de Simulación (Admin)</h2>
-          
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div>
-              <label class="sensor-label">Colonia a simular:</label>
-              <select 
-                [value]="simulacionColonia" 
-                (change)="actualizarColoniaSimulacion($event)"
-                [disabled]="cargandoRuta || enRuta"
-                style="width: 100%; padding: 8px; border-radius: 6px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-white);">
+        <div class="section-card" style="border-color:#2196F3;">
+          <h2 class="section-title" style="color:#2196F3;">Panel de Simulación</h2>
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
+
+            <div class="form-group">
+              <label class="sensor-label">Colonia a simular</label>
+              <select [value]="simulacionColonia"
+                      (change)="actualizarColoniaSimulacion($event)"
+                      [disabled]="cargandoRuta || enRuta"
+                      style="width:100%;padding:9px 12px;border-radius:8px;background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-white);">
                 <option value="">Selecciona colonia</option>
                 @for (c of colonias; track c) {
                   <option [value]="c">{{ c }}</option>
                 }
               </select>
             </div>
-            
-            <div>
-              <label class="sensor-label">Velocidad media (km/h): {{ simulacionVelocidad }}</label>
-              <input type="range" min="10" max="80" step="5" 
+
+            <div class="form-group">
+              <label class="sensor-label">
+                Velocidad media: <strong style="color:#2196F3;">{{ simulacionVelocidad }} km/h</strong>
+              </label>
+              <input type="range" min="10" max="80" step="5"
                      [value]="simulacionVelocidad"
                      (input)="cambiarVelocidad($event)"
                      [disabled]="cargandoRuta || enRuta"
-                     style="width: 100%;">
+                     style="width:100%;accent-color:#2196F3;">
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 5px;">
-              <button class="btn-toggle-mapa" style="flex: 1;" 
-                      [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'" 
-                      [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'" 
-                      [style.border-color]="'#2196F3'" 
-                      (click)="activarSeleccionMapa()"
-                      [disabled]="cargandoRuta || enRuta">
-                {{ puntoSalida ? '📍 Cambiar origen' : '📍 Fijar origen en mapa' }}
-              </button>
-            </div>
+            <button class="btn-toggle-mapa"
+                    [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'"
+                    [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'"
+                    style="border-color:#2196F3;"
+                    (click)="activarSeleccionMapa()"
+                    [disabled]="cargandoRuta || enRuta">
+              {{ puntoSalida ? 'Cambiar punto de origen' : 'Fijar punto de origen en mapa' }}
+            </button>
+
+            @if (puntoSalida) {
+              <p class="sensor-sub" style="color:#2196F3;">
+                Origen fijado — {{ usuariosGeo.length }} casas en ruta (máx. 9 para simulación)
+              </p>
+            }
+
           </div>
         </div>
       }
 
+      <!-- CAMIÓN -->
       <div class="section-card">
         <h2 class="section-title">Mi Camión</h2>
         @if (!camion) {
@@ -129,6 +137,32 @@
         }
       </div>
 
+      <!-- PRÓXIMAS RECOLECCIONES -->
+      <div class="section-card">
+        <h2 class="section-title">Próximas Recolecciones</h2>
+        @if (!colonia) {
+          <p class="empty-msg">No tienes colonia asignada.</p>
+        } @else if (fechasColonia.length === 0) {
+          <p class="empty-msg">No hay fechas programadas para {{ colonia }}.</p>
+        } @else {
+          <div class="fechas-list">
+            @for (f of fechasColonia; track f.id) {
+              <div class="fecha-item">
+                <div class="fecha-icono">
+                  <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                </div>
+                <div>
+                  <p class="fecha-dia">{{ formatearFecha(f.fecha) }}</p>
+                  <p class="fecha-hora">{{ f.hora }} — {{ f.colonia }}</p>
+                  @if (f.descripcion) { <p class="fecha-desc">{{ f.descripcion }}</p> }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- MAPA DE RUTA -->
       <div class="section-card">
         <div class="mapa-header">
           <div>
@@ -147,44 +181,55 @@
             <span class="leyenda-item"><span class="dot verde"></span> Pagó este mes</span>
             <span class="leyenda-item"><span class="dot naranja"></span> Pago pendiente</span>
             @if (enRuta) {
-              <span class="leyenda-item"><span class="dot azul"></span> Tu ubicación</span>
+              <span class="leyenda-item"><span class="dot azul"></span> Ubicación actual</span>
+            }
+            @if (modoSeleccionMapa) {
+              <span class="leyenda-item" style="color:#2196F3;font-weight:700;">
+                Haz clic para fijar origen
+              </span>
             }
           </div>
 
-          <div id="mapa-recolector" [style.cursor]="modoSeleccionMapa ? 'crosshair' : 'grab'"></div>
+          <div id="mapa-recolector"
+               [style.cursor]="modoSeleccionMapa ? 'crosshair' : 'grab'">
+          </div>
 
           <div class="ruta-acciones">
             @if (!enRuta) {
-              <div style="display: flex; gap: 10px; width: 100%;">
-                @if (rol === 'admin') {
-                  <button class="btn-iniciar-ruta" 
-                          style="flex: 1; background: linear-gradient(45deg, #2196F3, #64B5F6); justify-content: center;" 
-                          (click)="iniciarSimulacion()"
-                          [disabled]="cargandoRuta">
-                    @if (cargandoRuta) {
-                      <div class="spinner" style="width: 18px; height: 18px; border-width: 2px;"></div> Calculando...
-                    } @else {
-                      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Simular
-                    }
-                  </button>
-                } @else {
-                  <button class="btn-iniciar-ruta" style="flex: 1; justify-content: center;" (click)="iniciarRuta()">
-                    <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    Iniciar GPS
-                  </button>
-                }
-              </div>
+              @if (rol === 'admin') {
+                <button class="btn-iniciar-ruta"
+                        style="flex:1;justify-content:center;background:linear-gradient(45deg,#1565C0,#2196F3);"
+                        (click)="iniciarSimulacion()"
+                        [disabled]="cargandoRuta || !puntoSalida">
+                  @if (cargandoRuta) {
+                    <div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>
+                    Calculando ruta...
+                  } @else {
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    Simular ruta
+                  }
+                </button>
+              } @else {
+                <button class="btn-iniciar-ruta"
+                        style="flex:1;justify-content:center;"
+                        (click)="iniciarRuta()">
+                  <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  Iniciar GPS
+                </button>
+              }
             } @else {
-              <button class="btn-detener-ruta" style="width: 100%; justify-content: center;" (click)="detenerRuta()">
+              <button class="btn-detener-ruta"
+                      style="width:100%;justify-content:center;"
+                      (click)="detenerRuta()">
                 <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
                 Detener ruta
               </button>
             }
           </div>
 
-          @if (usuariosGeo.length === 0 && simulacionColonia) {
+          @if (usuariosGeo.length === 0) {
             <p class="empty-msg" style="margin-top:0.75rem;">
-              No hay casas registradas en {{ simulacionColonia }}.
+              No hay casas registradas en esta colonia.
             </p>
           }
         }
