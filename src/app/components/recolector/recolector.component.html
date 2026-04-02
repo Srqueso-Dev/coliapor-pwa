@@ -38,10 +38,15 @@
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <div>
               <label class="sensor-label">Colonia a simular:</label>
-              <input type="text" 
-                     [value]="simulacionColonia" 
-                     (change)="actualizarColoniaSimulacion($event)"
-                     style="width: 100%; padding: 8px; border-radius: 6px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-white);">
+              <select 
+                [value]="simulacionColonia" 
+                (change)="actualizarColoniaSimulacion($event)"
+                style="width: 100%; padding: 8px; border-radius: 6px; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-white);">
+                <option value="">Selecciona colonia</option>
+                @for (c of colonias; track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
             </div>
             
             <div>
@@ -122,7 +127,7 @@
           <div>
             <h2 class="section-title" style="margin-bottom:2px;">Mapa de Ruta</h2>
             <p class="mapa-sub">
-              {{ usuariosGeo.length }} casas en {{ colonia || 'tu colonia' }}
+              {{ usuariosGeo.length }} casas en {{ simulacionColonia || colonia || 'tu colonia' }}
             </p>
           </div>
           <button class="btn-toggle-mapa" (click)="toggleMapa()">
@@ -164,9 +169,9 @@
             }
           </div>
 
-          @if (usuariosGeo.length === 0) {
+          @if (usuariosGeo.length === 0 && simulacionColonia) {
             <p class="empty-msg" style="margin-top:0.75rem;">
-              No hay casas registradas en {{ colonia }}.
+              No hay casas registradas en {{ simulacionColonia }}.
             </p>
           }
         }

@@ -5,6 +5,7 @@ import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, collection, query, where, getDocs, onSnapshot } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
 import * as L from 'leaflet';
+import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
 
 @Component({
   selector: 'app-recolector',
@@ -23,6 +24,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   uid      = '';
   rol      = '';
   cargando = true;
+  colonias = COLONIAS_TONALA;
 
   // Camión
   camion: any = null;
@@ -41,7 +43,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   usuariosGeo: any[] = [];
 
   // Variables de Simulación (Solo Admin)
-  simulacionVelocidad: number = 30; // km/h por defecto
+  simulacionVelocidad: number = 30; 
   simulacionColonia: string = '';
   puntoSalida: [number, number] | null = null;
   modoSeleccionMapa: boolean = false;
@@ -75,7 +77,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
       this.nombre  = data['nombre']  || '';
       this.colonia = data['colonia'] || '';
-      this.simulacionColonia = this.colonia; // Pre-llenar para el admin
+      this.simulacionColonia = this.colonia; 
 
       await Promise.all([
         this.cargarCamion(user.uid),
@@ -138,14 +140,14 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
   // ── Usuarios de la colonia (para el mapa) ─────────────
   async cargarUsuariosColonia() {
-    if (!this.colonia) return;
+    if (!this.simulacionColonia) return;
     const snap = await getDocs(collection(this.firestore, 'usuarios'));
     this.usuariosGeo = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter((u: any) =>
         u.domicilio?.lat &&
         u.domicilio?.lng &&
-        u.domicilio?.colonia === this.colonia
+        u.domicilio?.colonia === this.simulacionColonia
       );
   }
 
@@ -180,14 +182,12 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     this.capaMarcadores = L.layerGroup().addTo(this.mapa);
     this.pintarCasasColonia();
 
-    // Evento de clic en el mapa (Solo útil para el admin en modo simulación)
     this.mapa.on('click', (e: L.LeafletMouseEvent) => {
       if (this.modoSeleccionMapa && this.rol === 'admin') {
         this.puntoSalida = [e.latlng.lat, e.latlng.lng];
-        this.modoSeleccionMapa = false; // Apagar el modo selección tras hacer clic
+        this.modoSeleccionMapa = false; 
         this.toast.ok('Punto de salida fijado');
         
-        // Poner el pin de inicio simulado
         const iconoRecolector = this.crearIconoRecolector();
         if (this.pinRecolector) {
           this.pinRecolector.setLatLng(this.puntoSalida);
@@ -231,17 +231,17 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
     if (this.usuariosGeo.length > 0) {
       const u = this.usuariosGeo[0];
-      this.mapa.setView([u.domicilio.lat, u.domicilio.lng], 17);
+      this.mapa.setView([u.domicilio.lat, u.domicilio.lng], 16);
     }
   }
 
   crearIconoRecolector() {
     return L.divIcon({
       className: '',
-      html: `<div class="pin-recolector">
-               <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+      html: `<div class="pin-recolector" style="width: 30px; height: 30px;">
+               <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
              </div>`,
-      iconSize: [44, 44], iconAnchor: [22, 44]
+      iconSize: [30, 30], iconAnchor: [15, 30]
     });
   }
 
@@ -284,12 +284,28 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     this.simulacionVelocidad = Number(input.value);
   }
 
-  actualizarColoniaSimulacion(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.simulacionColonia = input.value;
+  async actualizarColoniaSimulacion(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.simulacionColonia = select.value;
+    
+    // Al cambiar la colonia, recargamos las casas del mapa
+    await this.cargarUsuariosColonia();
+    this.pintarCasasColonia();
+
+    // Limpiamos el pin de salida para evitar que inicie en otra colonia
+    this.puntoSalida = null;
+    if (this.pinRecolector && this.mapa) {
+      this.mapa.removeLayer(this.pinRecolector);
+      (this.pinRecolector as any) = null;
+    }
   }
 
   iniciarSimulacion() {
+    if (this.usuariosGeo.length === 0) {
+      this.toast.info('No es necesario entrar en ruta');
+      return;
+    }
+
     if (!this.puntoSalida) {
       this.toast.error('Debes seleccionar un punto de salida en el mapa primero.');
       return;
@@ -298,7 +314,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     this.enRuta = true;
     this.indiceSimulacion = 0;
     
-    // Inyectar el punto de salida real como inicio de la ruta simulada
     this.rutaSimulada[0] = this.puntoSalida;
 
     const delayVelocidad = Math.max(500, (60000 / this.simulacionVelocidad));
