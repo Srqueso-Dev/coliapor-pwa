@@ -1,12 +1,19 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+// 1. Se agregaron AbstractControl y ValidationErrors
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Auth, signOut, createUserWithEmailAndPassword, sendEmailVerification } from '@angular/fire/auth';
 import { Firestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, setDoc, addDoc, query, orderBy } from '@angular/fire/firestore';
 import * as L from 'leaflet';
 import { ToastService } from '../toast/toast.service';
 import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
+
+// 2. Función validadora personalizada para verificar que solo haya letras
+function soloLetras(control: AbstractControl): ValidationErrors | null {
+  const val = control.value || '';
+  return /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/.test(val) ? null : { soloLetras: true };
+}
 
 @Component({
   selector: 'app-admin',
@@ -33,9 +40,18 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   cargando = false;
 
+  // 3. Método para bloquear físicamente números y símbolos en el HTML
+  validarSoloLetras(event: KeyboardEvent) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
   // ── Forms ─────────────────────────────────────────────
   formRecolector: FormGroup = this.fb.group({
-    nombre:   ['', Validators.required],
+    // 4. Se aplicó el validador "soloLetras" al campo nombre
+    nombre:   ['', [Validators.required, soloLetras]],
     telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     email:    ['', [Validators.required, Validators.email]],
     colonia:  ['', Validators.required]

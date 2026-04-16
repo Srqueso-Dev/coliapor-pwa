@@ -42,9 +42,14 @@
           <div class="form-group">
             <label>Nombre Completo</label>
             <input formControlName="nombre" type="text" placeholder="Tu nombre completo"
+              (keypress)="validarSoloLetras($event)"
               [class.input-error]="paso1.get('nombre')?.invalid && paso1.get('nombre')?.touched">
-            @if (paso1.get('nombre')?.invalid && paso1.get('nombre')?.touched) {
-              <span class="error-msg">Ingresa tu nombre completo (mínimo 3 caracteres).</span>
+            @if (paso1.get('nombre')?.errors?.['required'] && paso1.get('nombre')?.touched) {
+              <span class="error-msg">El nombre es requerido.</span>
+            } @else if (paso1.get('nombre')?.errors?.['soloLetras'] && paso1.get('nombre')?.touched) {
+              <span class="error-msg">Solo se permiten letras.</span>
+            } @else if (paso1.get('nombre')?.errors?.['minlength'] && paso1.get('nombre')?.touched) {
+              <span class="error-msg">Mínimo 3 caracteres.</span>
             }
           </div>
 

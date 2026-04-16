@@ -306,6 +306,12 @@ export class OnboardingComponent implements OnInit, OnDestroy {
       this.toast.error('Error al guardar. Intenta de nuevo.');
     } finally { this.guardando = false; }
   }
+  validarSoloLetras(event: KeyboardEvent) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
 
   async guardarPaso2() {
     if (this.paso2.invalid) { this.paso2.markAllAsTouched(); return; }

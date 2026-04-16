@@ -16,11 +16,25 @@ export class RegisterComponent {
 
   cargando = false;
 
+  validarSoloLetras(event: KeyboardEvent) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
   async registrar(nombre: string, email: string, pass: string, confirmar: string) {
     if (!nombre || !email || !pass || !confirmar) {
       this.toast.error('Por favor completa todos los campos.');
       return;
     }
+    
+    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (!regexLetras.test(nombre)) {
+      this.toast.error('El nombre solo debe contener letras.');
+      return;
+    }
+
     if (pass !== confirmar) {
       this.toast.error('Las contraseñas no coinciden.');
       return;

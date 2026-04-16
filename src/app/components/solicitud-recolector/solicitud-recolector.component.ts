@@ -29,6 +29,13 @@ export class SolicitudRecolectorComponent {
     mensaje:   ['']
   });
 
+  validarSoloLetras(event: KeyboardEvent) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
   async enviar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.enviando = true;

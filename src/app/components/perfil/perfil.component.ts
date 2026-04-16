@@ -72,6 +72,12 @@ export class PerfilComponent implements OnInit {
       c.toLowerCase().includes(this.coloniaFiltrada.toLowerCase())
     );
   }
+  validarSoloLetras(event: KeyboardEvent) {
+    const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
 
   ngOnInit() {
     this.offline = !navigator.onLine;

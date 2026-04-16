@@ -128,9 +128,12 @@
               <div class="form-group">
                 <label>Nombre Completo</label>
                 <input formControlName="nombre" type="text" placeholder="Nombre del recolector"
+                  (keypress)="validarSoloLetras($event)"
                   [class.input-error]="formRecolector.get('nombre')?.invalid && formRecolector.get('nombre')?.touched">
-                @if (formRecolector.get('nombre')?.invalid && formRecolector.get('nombre')?.touched) {
+                @if (formRecolector.get('nombre')?.errors?.['required'] && formRecolector.get('nombre')?.touched) {
                   <span class="error-msg">Requerido.</span>
+                } @else if (formRecolector.get('nombre')?.errors?.['soloLetras'] && formRecolector.get('nombre')?.touched) {
+                  <span class="error-msg">Solo se permiten letras.</span>
                 }
               </div>
               <div class="form-group">

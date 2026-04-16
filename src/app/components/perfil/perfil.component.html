@@ -49,9 +49,13 @@
         <div class="field">
           <label>Nombre Completo</label>
           @if (editandoPersonal) {
-            <input formControlName="nombre" type="text"
+            <input formControlName="nombre" type="text" (keypress)="validarSoloLetras($event)"
               [class.input-error]="formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched">
-            @if (formPersonal.get('nombre')?.invalid && formPersonal.get('nombre')?.touched) {
+            @if (formPersonal.get('nombre')?.errors?.['required'] && formPersonal.get('nombre')?.touched) {
+              <span class="error-msg">Requerido.</span>
+            } @else if (formPersonal.get('nombre')?.errors?.['soloLetras'] && formPersonal.get('nombre')?.touched) {
+              <span class="error-msg">Solo se permiten letras.</span>
+            } @else if (formPersonal.get('nombre')?.errors?.['minlength'] && formPersonal.get('nombre')?.touched) {
               <span class="error-msg">Mínimo 3 caracteres.</span>
             }
           } @else { <p class="field-value">{{ formPersonal.value.nombre || '—' }}</p> }
