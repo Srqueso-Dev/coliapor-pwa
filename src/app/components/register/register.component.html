@@ -7,7 +7,7 @@
 
     <div class="form-group">
       <label>Nombre Completo</label>
-      <input type="text" placeholder="Tu nombre completo" #nombreInput>
+      <input type="text" placeholder="Tu nombre completo" #nombreInput (keypress)="validarSoloLetras($event)">
     </div>
 
     <div class="form-group">
