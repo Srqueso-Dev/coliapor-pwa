@@ -47,24 +47,18 @@
           }
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Zona de trabajo</label>
-            <input formControlName="zona" type="text" placeholder="Ej. Zona Norte, Coyula..."
-              [class.input-error]="form.get('zona')?.invalid && form.get('zona')?.touched">
+        <div class="form-group">
+            <label>Zona de trabajo (Colonia)</label>
+            <select formControlName="zona" [class.input-error]="form.get('zona')?.invalid && form.get('zona')?.touched">
+              <option value="" disabled selected>Selecciona una colonia</option>
+              @for (colonia of colonias; track colonia) {
+                <option [value]="colonia">{{ colonia }}</option>
+              }
+            </select>
             @if (form.get('zona')?.invalid && form.get('zona')?.touched) {
               <span class="error-msg">Requerido.</span>
             }
           </div>
-          <div class="form-group">
-            <label>Número de licencia</label>
-            <input formControlName="licencia" type="text" placeholder="Licencia de conducir"
-              [class.input-error]="form.get('licencia')?.invalid && form.get('licencia')?.touched">
-            @if (form.get('licencia')?.invalid && form.get('licencia')?.touched) {
-              <span class="error-msg">Requerido.</span>
-            }
-          </div>
-        </div>
 
         <div class="form-group">
           <label>Mensaje adicional <span class="opcional">(opcional)</span></label>

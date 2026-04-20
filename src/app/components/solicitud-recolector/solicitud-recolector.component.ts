@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Firestore, addDoc, collection } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
+import { COLONIAS_TONALA } from '../onboarding/onboarding.component'; // <-- Importamos la lista
 
 @Component({
   selector: 'app-solicitud-recolector',
@@ -18,10 +19,10 @@ export class SolicitudRecolectorComponent {
 
   enviado   = false;
   enviando  = false;
+  colonias  = COLONIAS_TONALA; // <-- Asignamos a la variable
 
   form: FormGroup = this.fb.group({
-    nombre:    ['', [Validators.required, Validators.minLength(3),
-                     Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/)]],
+    nombre:    ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/)]],
     telefono:  ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     email:     ['', [Validators.required, Validators.email]],
     zona:      ['', Validators.required],

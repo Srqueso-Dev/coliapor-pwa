@@ -1,15 +1,22 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-// 1. Se agregaron AbstractControl y ValidationErrors
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Auth, signOut, createUserWithEmailAndPassword, sendEmailVerification } from '@angular/fire/auth';
+
+// Importaciones de AngularFire (Instancia Principal)
+import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, setDoc, addDoc, query, orderBy } from '@angular/fire/firestore';
+import { FirebaseApp } from '@angular/fire/app';
+
+// Importaciones estándar de Firebase (Para la Instancia Secundaria)
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+
 import * as L from 'leaflet';
 import { ToastService } from '../toast/toast.service';
 import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
 
-// 2. Función validadora personalizada para verificar que solo haya letras
+// Función validadora personalizada para verificar que solo haya letras
 function soloLetras(control: AbstractControl): ValidationErrors | null {
   const val = control.value || '';
   return /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/.test(val) ? null : { soloLetras: true };
@@ -23,10 +30,11 @@ function soloLetras(control: AbstractControl): ValidationErrors | null {
   styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit, OnDestroy {
-  private auth      = inject(Auth);
-  private firestore = inject(Firestore);
-  private fb        = inject(FormBuilder);
-  private toast     = inject(ToastService);
+  private auth        = inject(Auth);
+  private firestore   = inject(Firestore);
+  private fb          = inject(FormBuilder);
+  private toast       = inject(ToastService);
+  private firebaseApp = inject(FirebaseApp); // Inyección de la App de Firebase
 
   seccionActiva = 'usuarios';
   colonias      = COLONIAS_TONALA;
@@ -40,7 +48,7 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   cargando = false;
 
-  // 3. Método para bloquear físicamente números y símbolos en el HTML
+  // Método para bloquear físicamente números y símbolos en el HTML
   validarSoloLetras(event: KeyboardEvent) {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
     if (event.key.length === 1 && !regex.test(event.key)) {
@@ -50,7 +58,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   // ── Forms ─────────────────────────────────────────────
   formRecolector: FormGroup = this.fb.group({
-    // 4. Se aplicó el validador "soloLetras" al campo nombre
     nombre:   ['', [Validators.required, soloLetras]],
     telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     email:    ['', [Validators.required, Validators.email]],
@@ -292,30 +299,52 @@ export class AdminComponent implements OnInit, OnDestroy {
     }
     this.aprobando = true;
     const s = this.modalSolicitud;
+
+    // 1. Crear una instancia de Firebase aislada temporal para no cerrar la sesión del admin
+    const appSecundaria = initializeApp(this.firebaseApp.options, 'AppSecundaria' + Date.now());
+    const authSecundario = getAuth(appSecundaria);
+
     try {
-      const credencial = await createUserWithEmailAndPassword(this.auth, s.email, this.passwordTemporal);
-      await sendEmailVerification(credencial.user);
+      // 2. Crear al recolector en la app secundaria
+      const credencial = await createUserWithEmailAndPassword(authSecundario, s.email, this.passwordTemporal);
+      
+      // 3. Enviar correo de restablecimiento de contraseña en lugar de verificación simple
+      await sendPasswordResetEmail(authSecundario, s.email);
+
+      // Usamos s.zona si existe (por el cambio en el select) o s.colonia como respaldo
+      const coloniaFinal = s.zona || s.colonia || '';
+
+      // 4. Escribir en Firestore usando la sesión principal del Admin
       await setDoc(doc(this.firestore, 'usuarios', credencial.user.uid), {
         nombre: s.nombre, telefono: s.telefono, email: s.email,
-        colonia: s.colonia, licencia: s.licencia,
+        colonia: coloniaFinal, licencia: s.licencia,
         rol: 'recolector', activo: true, perfilCompleto: true, creadoEn: new Date()
       });
+      
       await addDoc(collection(this.firestore, 'recolectores'), {
         uid: credencial.user.uid, nombre: s.nombre, telefono: s.telefono,
-        email: s.email, colonia: s.colonia, activo: true, creadoEn: new Date()
+        email: s.email, colonia: coloniaFinal, activo: true, creadoEn: new Date()
       });
+      
       await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), { estado: 'aprobada' });
+      
       this.cerrarModal();
-      this.toast.ok(`${s.nombre} aprobado. Se enviará verificación por correo. Vuelve a iniciar sesión.`);
-      setTimeout(() => { window.location.href = '/login'; }, 3000);
+      this.toast.ok(`${s.nombre} aprobado. Se le envió un correo oficial para que asigne su propia contraseña.`);
+
+      // 5. Refrescar listas sin recargar la página
+      await this.cargarSolicitudes();
+      await this.cargarRecolectores();
+
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        this.toast.error('Este correo ya tiene una cuenta.');
+        this.toast.error('Este correo ya tiene una cuenta registrada.');
       } else {
         this.toast.error('Error al crear la cuenta. Intenta de nuevo.');
       }
+    } finally {
       this.aprobando = false;
-      this.cerrarModal();
+      // Destruir la instancia secundaria para liberar memoria
+      await deleteApp(appSecundaria);
     }
   }
 
