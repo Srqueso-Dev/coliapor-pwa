@@ -1,77 +1,101 @@
-import { Component, inject } from '@angular/core'; // ← El error estaba aquí
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { Auth, signInWithEmailAndPassword } from '@angular/fire/auth';
+import { RouterModule, Router } from '@angular/router';
+import { Auth, signInWithEmailAndPassword, sendPasswordResetEmail } from '@angular/fire/auth';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
-export class LoginComponent {
-  private auth = inject(Auth);
+export class LoginComponent implements OnInit {
+  private auth      = inject(Auth);
   private firestore = inject(Firestore);
-  private fb = inject(FormBuilder);
-  private router = inject(Router);
-  private toast = inject(ToastService);
+  private toast     = inject(ToastService);
+  private router    = inject(Router);
 
-  cargando = false;
+  mensajeBloqueado = '';
+  cargando         = false;
 
-  form: FormGroup = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]]
-  });
+  ngOnInit() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('bloqueado') === 'true') {
+      this.mensajeBloqueado = 'Tu cuenta ha sido dada de baja. Contacta al administrador.';
+    }
+  }
 
-  async login() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  async ingresar(email: string, pass: string) {
+    if (!email || !pass) {
+      this.toast.error('Por favor ingresa tu correo y contraseña.');
       return;
     }
-
     this.cargando = true;
-    const { email, password } = this.form.value;
-
     try {
-      const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
-      const user = userCredential.user;
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, pass);
 
-      // Obtener el documento del usuario para ver el ROL
-      const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      
-      if (snap.exists()) {
-        const data = snap.data();
-        const rol = data['rol'];
+      // Si necesitas que verifiquen el correo antes de entrar, descomenta esto:
+      // if (!userCredential.user.emailVerified) {
+      //   this.toast.info('Debes verificar tu correo antes de iniciar sesión.');
+      //   await this.auth.signOut();
+      //   return;
+      // }
 
-        console.log('Usuario logueado con rol:', rol);
+      const uid     = userCredential.user.uid;
+      const docSnap = await getDoc(doc(this.firestore, 'usuarios', uid));
 
-        // REDIRECCIÓN CRÍTICA
-        if (rol === 'admin') {
-          this.router.navigate(['/admin']);
-        } else if (rol === 'recolector') {
-          this.router.navigate(['/recolector']);
-        } else {
-          // Si es ciudadano común
-          if (data['perfilCompleto']) {
-            this.router.navigate(['/dashboard']);
-          } else {
-            this.router.navigate(['/onboarding']);
-          }
-        }
-      } else {
-        // Si no hay documento (error raro), mandarlo a onboarding
+      if (docSnap.exists() && docSnap.data()['activo'] === false) {
+        await this.auth.signOut();
+        this.mensajeBloqueado = 'Tu cuenta ha sido dada de baja. Contacta al administrador.';
+        return;
+      }
+
+      const data = docSnap.exists() ? docSnap.data() : null;
+      const rol  = data?.['rol'] || '';
+
+      // REDIRECCIÓN ARREGLADA (Usando Router de Angular para que sea instantáneo)
+      if (rol === 'admin') {
+        this.router.navigate(['/admin']);
+      } else if (rol === 'recolector') {
+        this.router.navigate(['/recolector']);
+      } else if (!data || !data['perfilCompleto']) {
         this.router.navigate(['/onboarding']);
+      } else {
+        this.router.navigate(['/dashboard']);
       }
 
     } catch (error: any) {
-      this.toast.error('Credenciales incorrectas o cuenta inexistente.');
-      console.error(error);
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        this.toast.error('Correo o contraseña incorrectos.');
+      } else if (error.code === 'auth/user-not-found') {
+        this.toast.error('No existe una cuenta con ese correo.');
+      } else if (error.code === 'auth/too-many-requests') {
+        this.toast.error('Demasiados intentos fallidos. Intenta más tarde.');
+      } else {
+        this.toast.error('Error al iniciar sesión. Intenta de nuevo.');
+      }
     } finally {
       this.cargando = false;
+    }
+  }
+
+  async olvideMiContrasena(email: string) {
+    if (!email) {
+      this.toast.info('Ingresa tu correo primero en el campo de arriba.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(this.auth, email);
+      this.toast.ok('Te enviamos un correo para restablecer tu contraseña.');
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        this.toast.error('No existe una cuenta con ese correo.');
+      } else {
+        this.toast.error('Error al enviar el correo. Intenta de nuevo.');
+      }
     }
   }
 }
