@@ -201,3 +201,111 @@
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
+.panel-industrial {
+  background: radial-gradient(circle at top, #1a1a1a, #0a0a0a);
+  min-height: 100vh;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 40px;
+}
+
+/* HEADER */
+.ind-header {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ind-subtitle { color: #4CAF50; font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; margin: 0; }
+.ind-title { font-size: 1.5rem; font-weight: 800; margin: 4px 0; }
+.ind-colonia { color: #888; font-size: 0.9rem; margin: 0; }
+
+.btn-logout-ind {
+  background: rgba(255, 50, 50, 0.1);
+  border: 1px solid #ff5252;
+  color: #ff5252;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* CARDS */
+.ind-main { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+.telemetria-grid { display: grid; gap: 16px; margin-top: 16px; }
+
+.telemetria-card {
+  background: #1e1e1e;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.sensor-label { color: #888; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; }
+.sensor-valor { font-size: 3rem; font-weight: 900; margin: 10px 0; }
+.sensor-valor span { font-size: 1.2rem; opacity: 0.5; }
+
+.btn-tara {
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  font-weight: 700;
+  margin-top: 12px;
+}
+
+.alerta-lleno { background: #ff5252; color: #fff; padding: 12px; border-radius: 8px; font-weight: 800; animation: blink 2s infinite; }
+.alerta-ok { background: rgba(76, 175, 80, 0.2); color: #4CAF50; border: 1px solid #4CAF50; padding: 12px; border-radius: 8px; font-weight: 800; }
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* RUTA */
+.ind-navegacion { margin-top: 30px; }
+.ruta-activa { background: #1e1e1e; border-radius: 20px; padding: 30px 20px; text-align: center; }
+
+.parada-badge { background: #2196F3; font-size: 0.7rem; padding: 4px 10px; border-radius: 10px; font-weight: 800; }
+.parada-calle { font-size: 2rem; margin: 15px 0 5px; font-weight: 800; }
+.parada-titular { color: #888; font-size: 1rem; }
+
+.btn-gigante {
+  margin-top: 25px;
+  width: 100%;
+  padding: 20px;
+  border-radius: 16px;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: 900;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.btn-iniciar { background: #4CAF50; color: #000; }
+.btn-verde { background: #2196F3; color: #fff; }
+
+/* INCIDENCIAS */
+.acciones-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+.btn-incidencia {
+  background: #252525;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 12px;
+  padding: 15px 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.btn-incidencia svg { width: 20px; height: 20px; }
+.btn-incidencia.amarillo { color: #ffeb3b; }
+.btn-incidencia.naranja { color: #ff9800; }
+.btn-incidencia.rojo { color: #f44336; }
