@@ -1,0 +1,203 @@
+/* ── ESTILOS DEL PANEL DE SIMULACIÓN (MODO ADMIN) ── */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-container {
+  background-color: #f4f7f6;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #333;
+  padding-bottom: 3rem;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+  background-color: #ffffff;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.btn-back {
+  color: #555;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  transition: color 0.2s;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+.btn-back:hover { color: #2196F3; }
+.btn-back svg { fill: currentColor; width: 100%; height: 100%; }
+
+.nav-logo { height: 40px; }
+
+.rol-badge {
+  background-color: #E3F2FD;
+  color: #1565C0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── CONTENIDO PRINCIPAL ── */
+.content {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.bienvenida { margin-bottom: 1.5rem; }
+.bienvenida-nombre { margin: 0; font-size: 1.8rem; font-weight: 800; color: #111; }
+.bienvenida-colonia { color: #666; margin-top: 5px; font-size: 1.1rem; }
+
+/* ── TARJETAS ── */
+.section-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  border-top: 4px solid #ccc;
+}
+
+.section-title { margin-top: 0; font-size: 1.3rem; font-weight: 700; margin-bottom: 15px; }
+
+/* ── CONTROLES ── */
+.form-group { margin-bottom: 15px; }
+
+.sensor-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.sensor-sub { font-size: 0.85rem; font-weight: 600; margin-top: 5px; }
+
+.btn-toggle-mapa {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 2px solid #2196F3;
+  color: #2196F3;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-toggle-mapa:hover:not([disabled]) { background: #E3F2FD; }
+.btn-toggle-mapa[disabled] { opacity: 0.5; cursor: not-allowed; border-color: #ccc; color: #999; }
+
+/* ── MAPA ── */
+.mapa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.mapa-sub { margin: 0; color: #777; font-size: 0.9rem; }
+
+.mapa-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #eee;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.dot.verde   { background: #00E676; }
+.dot.naranja { background: #FF9100; }
+.dot.azul    { background: #2196F3; }
+
+#mapa-recolector {
+  height: 450px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  z-index: 1;
+}
+
+/* ── BOTONES RUTA ── */
+.ruta-acciones {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-iniciar-ruta, .btn-detener-ruta {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter 0.2s;
+}
+
+.btn-iniciar-ruta:hover:not([disabled]) { filter: brightness(1.1); }
+.btn-iniciar-ruta[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+.btn-detener-ruta { background: #F44336; }
+.btn-detener-ruta:hover { background: #D32F2F; }
+
+.btn-iniciar-ruta svg, .btn-detener-ruta svg {
+  width: 20px; height: 20px; fill: currentColor;
+}
+
+/* ── ESTADOS ── */
+.empty-msg {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px 0;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: #666;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 4px solid rgba(0,0,0,0.1);
+  border-top-color: #2196F3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }

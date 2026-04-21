@@ -1,0 +1,132 @@
+<div class="page-container">
+
+  <nav class="navbar">
+    <a routerLink="/admin" class="btn-back">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </a>
+    <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
+    <span class="rol-badge">ADMIN — SIMULACIÓN DE RUTA</span>
+  </nav>
+
+  @if (cargando) {
+    <div class="loading"><div class="spinner"></div><p>Cargando simulación...</p></div>
+  } @else {
+    <main class="content">
+
+      <div class="bienvenida">
+        <h1 class="bienvenida-nombre">Simulación de OSRM</h1>
+        <p class="bienvenida-colonia">Colonia a simular: <strong>{{ simulacionColonia || '—' }}</strong></p>
+      </div>
+
+      <div class="section-card" style="border-color:#2196F3;">
+        <h2 class="section-title" style="color:#2196F3;">Controles del Simulador</h2>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="form-group">
+            <label class="sensor-label">Cambiar colonia</label>
+            <select [value]="simulacionColonia"
+                    (change)="actualizarColoniaSimulacion($event)"
+                    [disabled]="cargandoRuta || enRuta"
+                    style="width:100%;padding:9px 12px;border-radius:8px;background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-white);">
+              <option value="">Selecciona colonia</option>
+              @for (c of colonias; track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="sensor-label">
+              Velocidad media: <strong style="color:#2196F3;">{{ simulacionVelocidad }} km/h</strong>
+            </label>
+            <input type="range" min="10" max="80" step="5"
+                   [value]="simulacionVelocidad"
+                   (input)="cambiarVelocidad($event)"
+                   [disabled]="cargandoRuta || enRuta"
+                   style="width:100%;accent-color:#2196F3;">
+          </div>
+
+          <button class="btn-toggle-mapa"
+                  [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'"
+                  [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'"
+                  style="border-color:#2196F3;"
+                  (click)="activarSeleccionMapa()"
+                  [disabled]="cargandoRuta || enRuta">
+            {{ puntoSalida ? 'Cambiar punto de origen' : 'Fijar punto de origen en mapa' }}
+          </button>
+
+          @if (puntoSalida) {
+            <p class="sensor-sub" style="color:#2196F3;">
+              Origen fijado — {{ usuariosGeo.length }} casas en ruta (máx. 9 para simulación)
+            </p>
+          }
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="mapa-header">
+          <div>
+            <h2 class="section-title" style="margin-bottom:2px;">Mapa de Rastreo</h2>
+            <p class="mapa-sub">
+              {{ usuariosGeo.length }} casas en {{ simulacionColonia || 'la colonia' }}
+            </p>
+          </div>
+          <button class="btn-toggle-mapa" (click)="toggleMapa()">
+            {{ mapaActivo ? 'Ocultar' : 'Ver mapa' }}
+          </button>
+        </div>
+
+        @if (mapaActivo) {
+          <div class="mapa-leyenda">
+            <span class="leyenda-item"><span class="dot verde"></span> Pagó este mes</span>
+            <span class="leyenda-item"><span class="dot naranja"></span> Pago pendiente</span>
+            @if (enRuta) {
+              <span class="leyenda-item"><span class="dot azul"></span> Avance Simulado</span>
+            }
+            @if (modoSeleccionMapa) {
+              <span class="leyenda-item" style="color:#2196F3;font-weight:700;">
+                Haz clic en el mapa para fijar origen
+              </span>
+            }
+          </div>
+
+          <div id="mapa-recolector"
+               [style.cursor]="modoSeleccionMapa ? 'crosshair' : 'grab'">
+          </div>
+
+          <div class="ruta-acciones">
+            @if (!enRuta) {
+              <button class="btn-iniciar-ruta"
+                      style="width:100%;justify-content:center;background:linear-gradient(45deg,#1565C0,#2196F3);"
+                      (click)="iniciarSimulacion()"
+                      [disabled]="cargandoRuta || !puntoSalida">
+                @if (cargandoRuta) {
+                  <div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>
+                  Calculando ruta OSRM...
+                } @else {
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  Arrancar Simulación
+                }
+              </button>
+            } @else {
+              <button class="btn-detener-ruta"
+                      style="width:100%;justify-content:center;"
+                      (click)="detenerRuta()">
+                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                Detener Camión
+              </button>
+            }
+          </div>
+
+          @if (usuariosGeo.length === 0) {
+            <p class="empty-msg" style="margin-top:0.75rem;">
+              No hay casas registradas en esta colonia.
+            </p>
+          }
+        }
+      </div>
+
+    </main>
+  }
+
+</div>

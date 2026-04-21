@@ -1,241 +1,93 @@
-<div class="page-container">
+<div class="panel-industrial">
 
-  <nav class="navbar">
-    @if (rol === 'admin') {
-      <a routerLink="/admin" class="btn-back">
-        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-      </a>
-    }
-    <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
-    <span class="rol-badge">{{ rol === 'admin' ? 'ADMIN — VISTA RECOLECTOR' : 'RECOLECTOR' }}</span>
-    @if (rol !== 'admin') {
-      <button class="btn-logout" (click)="cerrarSesion()">
-        <svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-      </button>
-    }
-  </nav>
+  <header class="ind-header">
+    <div class="ind-header-info">
+      <p class="ind-subtitle">OPERADOR</p>
+      <h1 class="ind-title">{{ nombre }}</h1>
+      <p class="ind-colonia">{{ colonia || 'Sin Zona Asignada' }}</p>
+    </div>
+    <button class="btn-logout-ind" (click)="cerrarSesion()">SALIR</button>
+  </header>
 
   @if (cargando) {
-    <div class="loading"><div class="spinner"></div><p>Cargando...</p></div>
+    <div class="ind-loading">Cargando sistema...</div>
   } @else {
+    <main class="ind-main">
 
-    <main class="content">
-
-      <div class="bienvenida">
-        <h1 class="bienvenida-nombre">
-          @if (rol === 'admin') { Vista de recolector } @else { Hola, {{ nombre }} }
-        </h1>
-        <p class="bienvenida-colonia">
-          Colonia asignada: <strong>{{ colonia || '—' }}</strong>
-        </p>
-      </div>
-
-      <!-- PANEL SIMULACIÓN (Solo Admin) -->
-      @if (rol === 'admin') {
-        <div class="section-card" style="border-color:#2196F3;">
-          <h2 class="section-title" style="color:#2196F3;">Panel de Simulación</h2>
-
-          <div style="display:flex;flex-direction:column;gap:12px;">
-
-            <div class="form-group">
-              <label class="sensor-label">Colonia a simular</label>
-              <select [value]="simulacionColonia"
-                      (change)="actualizarColoniaSimulacion($event)"
-                      [disabled]="cargandoRuta || enRuta"
-                      style="width:100%;padding:9px 12px;border-radius:8px;background:var(--input-bg);border:1px solid var(--border-color);color:var(--text-white);">
-                <option value="">Selecciona colonia</option>
-                @for (c of colonias; track c) {
-                  <option [value]="c">{{ c }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label class="sensor-label">
-                Velocidad media: <strong style="color:#2196F3;">{{ simulacionVelocidad }} km/h</strong>
-              </label>
-              <input type="range" min="10" max="80" step="5"
-                     [value]="simulacionVelocidad"
-                     (input)="cambiarVelocidad($event)"
-                     [disabled]="cargandoRuta || enRuta"
-                     style="width:100%;accent-color:#2196F3;">
-            </div>
-
-            <button class="btn-toggle-mapa"
-                    [style.background]="modoSeleccionMapa ? '#2196F3' : 'transparent'"
-                    [style.color]="modoSeleccionMapa ? '#fff' : '#2196F3'"
-                    style="border-color:#2196F3;"
-                    (click)="activarSeleccionMapa()"
-                    [disabled]="cargandoRuta || enRuta">
-              {{ puntoSalida ? 'Cambiar punto de origen' : 'Fijar punto de origen en mapa' }}
-            </button>
-
-            @if (puntoSalida) {
-              <p class="sensor-sub" style="color:#2196F3;">
-                Origen fijado — {{ usuariosGeo.length }} casas en ruta (máx. 9 para simulación)
-              </p>
-            }
-
-          </div>
-        </div>
-      }
-
-      <!-- CAMIÓN -->
-      <div class="section-card">
-        <h2 class="section-title">Mi Camión</h2>
-        @if (!camion) {
-          <p class="empty-msg">No hay un camión asignado aún.</p>
-        } @else {
-          <div class="camion-header">
-            <div class="camion-icono" [style.background]="estadoCamionColor + '22'">
-              <svg viewBox="0 0 24 24" [style.fill]="estadoCamionColor">
-                <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="camion-placa">{{ camion.placa }}</p>
-              <p class="camion-modelo">{{ camion.modelo }}</p>
-            </div>
-            <span class="estado-pill"
-              [style.background]="estadoCamionColor + '22'"
-              [style.color]="estadoCamionColor"
-              [style.border-color]="estadoCamionColor">
-              {{ estadoCamionLabel }}
-            </span>
+      <section class="ind-telemetria">
+        <div class="telemetria-grid">
+          
+          <div class="telemetria-card peso">
+            <span class="sensor-label">CARGA ACTUAL</span>
+            <div class="sensor-valor">{{ camion?.pesoActual || 0 }} <span>KG</span></div>
+            <button class="btn-tara" (click)="calibrarCero()">CALIBRAR A CERO (TARA)</button>
           </div>
 
-          <div class="sensores-grid">
-            <div class="sensor-card">
-              <p class="sensor-label">Peso actual</p>
-              <p class="sensor-valor naranja">{{ camion.pesoActual ?? '—' }}<span> kg</span></p>
-              <p class="sensor-sub">Sensor de carga</p>
-            </div>
-            <div class="sensor-card">
-              <p class="sensor-label">Contenedor</p>
-              @if (camion.contenedorLleno === true) {
-                <div class="sensor-valor rojo">
-                  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                  LLENO
-                </div>
-              } @else if (camion.contenedorLleno === false) {
-                <div class="sensor-valor verde">
-                  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                  DISPONIBLE
-                </div>
-              } @else {
-                <p class="sensor-valor gris">Sin datos</p>
-              }
-              <p class="sensor-sub">Sensor láser</p>
-            </div>
-          </div>
-
-          @if (camion.ultimaActualizacion?.toDate) {
-            <p class="ultima-act">
-              Última actualización: {{ camion.ultimaActualizacion.toDate() | date:'dd/MM/yyyy HH:mm' }}
-            </p>
-          }
-        }
-      </div>
-
-      <!-- PRÓXIMAS RECOLECCIONES -->
-      <div class="section-card">
-        <h2 class="section-title">Próximas Recolecciones</h2>
-        @if (!colonia) {
-          <p class="empty-msg">No tienes colonia asignada.</p>
-        } @else if (fechasColonia.length === 0) {
-          <p class="empty-msg">No hay fechas programadas para {{ colonia }}.</p>
-        } @else {
-          <div class="fechas-list">
-            @for (f of fechasColonia; track f.id) {
-              <div class="fecha-item">
-                <div class="fecha-icono">
-                  <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5C3.9 3 3 3.9 3 5v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-                </div>
-                <div>
-                  <p class="fecha-dia">{{ formatearFecha(f.fecha) }}</p>
-                  <p class="fecha-hora">{{ f.hora }} — {{ f.colonia }}</p>
-                  @if (f.descripcion) { <p class="fecha-desc">{{ f.descripcion }}</p> }
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-
-      <!-- MAPA DE RUTA -->
-      <div class="section-card">
-        <div class="mapa-header">
-          <div>
-            <h2 class="section-title" style="margin-bottom:2px;">Mapa de Ruta</h2>
-            <p class="mapa-sub">
-              {{ usuariosGeo.length }} casas en {{ simulacionColonia || colonia || 'tu colonia' }}
-            </p>
-          </div>
-          <button class="btn-toggle-mapa" (click)="toggleMapa()">
-            {{ mapaActivo ? 'Ocultar' : 'Ver mapa' }}
-          </button>
-        </div>
-
-        @if (mapaActivo) {
-          <div class="mapa-leyenda">
-            <span class="leyenda-item"><span class="dot verde"></span> Pagó este mes</span>
-            <span class="leyenda-item"><span class="dot naranja"></span> Pago pendiente</span>
-            @if (enRuta) {
-              <span class="leyenda-item"><span class="dot azul"></span> Ubicación actual</span>
-            }
-            @if (modoSeleccionMapa) {
-              <span class="leyenda-item" style="color:#2196F3;font-weight:700;">
-                Haz clic para fijar origen
-              </span>
-            }
-          </div>
-
-          <div id="mapa-recolector"
-               [style.cursor]="modoSeleccionMapa ? 'crosshair' : 'grab'">
-          </div>
-
-          <div class="ruta-acciones">
-            @if (!enRuta) {
-              @if (rol === 'admin') {
-                <button class="btn-iniciar-ruta"
-                        style="flex:1;justify-content:center;background:linear-gradient(45deg,#1565C0,#2196F3);"
-                        (click)="iniciarSimulacion()"
-                        [disabled]="cargandoRuta || !puntoSalida">
-                  @if (cargandoRuta) {
-                    <div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>
-                    Calculando ruta...
-                  } @else {
-                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    Simular ruta
-                  }
-                </button>
-              } @else {
-                <button class="btn-iniciar-ruta"
-                        style="flex:1;justify-content:center;"
-                        (click)="iniciarRuta()">
-                  <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                  Iniciar GPS
-                </button>
-              }
+          <div class="telemetria-card volumen">
+            <span class="sensor-label">ESTADO CONTENEDOR</span>
+            @if (camion?.contenedorLleno) {
+              <div class="alerta-lleno">¡LLENO!</div>
             } @else {
-              <button class="btn-detener-ruta"
-                      style="width:100%;justify-content:center;"
-                      (click)="detenerRuta()">
-                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-                Detener ruta
-              </button>
+              <div class="alerta-ok">ESPACIO DISPONIBLE</div>
             }
           </div>
 
-          @if (usuariosGeo.length === 0) {
-            <p class="empty-msg" style="margin-top:0.75rem;">
-              No hay casas registradas en esta colonia.
-            </p>
+        </div>
+      </section>
+
+      <section class="ind-navegacion">
+        @if (!enRuta) {
+          <div class="ruta-inactiva">
+            <p><strong>{{ casasEnRuta.length }}</strong> domicilios en ruta de hoy.</p>
+            <button class="btn-gigante btn-iniciar" (click)="iniciarRuta()">INICIAR RUTA</button>
+          </div>
+        } @else {
+          
+          @if (paradaActual) {
+            <div class="ruta-activa">
+              <div class="parada-info">
+                <span class="parada-badge">PARADA {{ indiceParada + 1 }} DE {{ casasEnRuta.length }}</span>
+                <h2 class="parada-calle">{{ paradaActual.domicilio?.calle }} #{{ paradaActual.domicilio?.numero }}</h2>
+                <p class="parada-titular">Titular: {{ paradaActual.nombre }}</p>
+              </div>
+              
+              <button class="btn-gigante btn-verde" (click)="marcarRecolectado()">
+                MARCAR RECOLECTADO Y AVANZAR
+              </button>
+            </div>
           }
+
         }
-      </div>
+      </section>
+
+      <section class="ind-acciones">
+        <p class="sensor-label" style="text-align: center; margin-bottom: 10px;">REPORTES RÁPIDOS AL SISTEMA</p>
+        <div class="acciones-grid">
+          
+          <button class="btn-incidencia amarillo" (click)="reporteRapido('mantenimiento', 'Aviso de tráfico/retraso enviado')">
+            <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;">
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            TRAFICO / RETRASO
+          </button>
+          
+          <button class="btn-incidencia naranja" (click)="reporteRapido('apagado', 'Aviso de pausa enviado')">
+            <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+            PAUSA (COMIDA)
+          </button>
+          
+          <button class="btn-incidencia rojo" (click)="reporteRapido('mantenimiento', 'Aviso de camión lleno enviado')">
+            <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;">
+              <path d="M15.73 3H8.27L3 8.27v7.46L8.27 21h7.46L21 15.73V8.27L15.73 3zM12 17.3c-.72 0-1.3-.58-1.3-1.3s.58-1.3 1.3-1.3 1.3.58 1.3 1.3-.58 1.3-1.3 1.3zm1-4.3h-2V7h2v6z"/>
+            </svg>
+            CAMIÓN LLENO
+          </button>
+
+        </div>
+      </section>
 
     </main>
   }
-
 </div>
