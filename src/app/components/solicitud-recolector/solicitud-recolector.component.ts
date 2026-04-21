@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Firestore, addDoc, collection } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
-import { COLONIAS_TONALA } from '../onboarding/onboarding.component'; // <-- Importamos la lista
+import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
 
 @Component({
   selector: 'app-solicitud-recolector',
@@ -19,7 +19,7 @@ export class SolicitudRecolectorComponent {
 
   enviado   = false;
   enviando  = false;
-  colonias  = COLONIAS_TONALA; // <-- Asignamos a la variable
+  colonias  = COLONIAS_TONALA; 
 
   form: FormGroup = this.fb.group({
     nombre:    ['', [Validators.required, Validators.minLength(3), Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/)]],
@@ -30,8 +30,17 @@ export class SolicitudRecolectorComponent {
     mensaje:   ['']
   });
 
+  // Evita que se tecleen números o símbolos en el nombre
   validarSoloLetras(event: KeyboardEvent) {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
+    if (event.key.length === 1 && !regex.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  // Evita que se tecleen letras o símbolos en el teléfono
+  validarSoloNumeros(event: KeyboardEvent) {
+    const regex = /^[0-9]+$/;
     if (event.key.length === 1 && !regex.test(event.key)) {
       event.preventDefault();
     }

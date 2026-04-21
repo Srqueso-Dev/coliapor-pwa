@@ -1,9 +1,7 @@
 <div class="admin-wrapper">
 
-  <!-- ══ NAVBAR DOS FILAS ══ -->
   <nav class="navbar">
 
-    <!-- Fila 1: brand + acciones -->
     <div class="navbar-top">
       <div class="navbar-brand">
         <img src="assets/logo.png" alt="Coliapor" class="nav-logo">
@@ -25,7 +23,6 @@
       </div>
     </div>
 
-    <!-- Fila 2: tabs -->
     <div class="navbar-tabs">
       <button class="tab" [class.active]="seccionActiva === 'usuarios'" (click)="setSeccion('usuarios')">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
@@ -64,7 +61,6 @@
 
   <main class="content">
 
-    <!-- ══ USUARIOS ══ -->
     @if (seccionActiva === 'usuarios') {
       <div class="section">
         <div class="section-header">
@@ -114,7 +110,6 @@
       </div>
     }
 
-    <!-- ══ RECOLECTORES ══ -->
     @if (seccionActiva === 'recolectores') {
       <div class="section">
         <div class="section-header">
@@ -199,7 +194,6 @@
       </div>
     }
 
-    <!-- ══ SOLICITUDES ══ -->
     @if (seccionActiva === 'solicitudes') {
       <div class="section">
         <div class="section-header">
@@ -244,11 +238,9 @@
       </div>
     }
 
-    <!-- ══ CAMIONES ══ -->
     @if (seccionActiva === 'camiones') {
       <div class="section">
 
-        <!-- Resumen estadísticas -->
         <div class="section-header">
           <h2>Gestión de Camiones</h2>
           <span class="badge">{{ camiones.length }} camiones</span>
@@ -284,7 +276,6 @@
           </div>
         </div>
 
-        <!-- Formulario agregar / editar camión -->
         <div class="form-card">
           <h3>{{ editandoCamion ? 'Editar Camión' : 'Agregar Camión' }}</h3>
           <form [formGroup]="formCamion">
@@ -360,7 +351,6 @@
           </form>
         </div>
 
-        <!-- Lista de camiones -->
         @if (camiones.length === 0) {
           <div class="empty">No hay camiones registrados aún.</div>
         } @else {
@@ -416,7 +406,6 @@
       </div>
     }
 
-    <!-- ══ FECHAS ══ -->
     @if (seccionActiva === 'fechas') {
       <div class="section">
         <div class="section-header">
@@ -500,7 +489,6 @@
       </div>
     }
 
-    <!-- ══ PAGOS ══ -->
     @if (seccionActiva === 'pagos') {
       <div class="section">
         <div class="section-header"><h2>Configuración de Cobro</h2></div>
@@ -572,7 +560,6 @@
       </div>
     }
 
-    <!-- ══ MAPA ══ -->
     @if (seccionActiva === 'mapa') {
       <div class="section mapa-section">
         <div class="section-header">
@@ -626,7 +613,6 @@
 
   </main>
 
-  <!-- ══ MODAL APROBAR RECOLECTOR ══ -->
   @if (modalSolicitud) {
     <div class="modal-overlay" (click)="cerrarModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
@@ -640,19 +626,17 @@
           <p class="modal-info"><strong>{{ modalSolicitud.nombre }}</strong></p>
           <p class="modal-info gray">{{ modalSolicitud.email }}</p>
           <p class="modal-info gray">Colonia: {{ modalSolicitud.colonia || modalSolicitud.zona }}</p>
-          <div class="form-group" style="margin-top: 1.2rem;">
-            <label>Contraseña temporal</label>
-            <input type="password" placeholder="Mínimo 6 caracteres"
-              [(ngModel)]="passwordTemporal"
-              [class.input-error]="!!passwordError">
-            @if (passwordError) { <span class="error-msg">{{ passwordError }}</span> }
+          
+          <div style="margin-top: 1.5rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+            <p class="modal-hint" style="margin: 0; color: #0d47a1; font-size: 0.9rem; line-height: 1.4;">
+              <strong>Acción automática:</strong> Al aprobar esta solicitud, se enviará un correo electrónico oficial al candidato con un enlace único para que asigne su propia contraseña y active su cuenta.
+            </p>
           </div>
-          <p class="modal-hint">El recolector recibirá un correo de verificación y podrá cambiar su contraseña después.</p>
         </div>
         <div class="modal-footer">
           <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
           <button class="btn-primary" (click)="aprobarSolicitud()" [disabled]="aprobando">
-            @if (aprobando) { Creando cuenta... } @else { APROBAR }
+            @if (aprobando) { Enviando correo... } @else { APROBAR Y ENVIAR }
           </button>
         </div>
       </div>

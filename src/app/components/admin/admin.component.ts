@@ -3,20 +3,15 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
-// Importaciones de AngularFire (Instancia Principal)
 import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, collection, getDocs, doc, getDoc, updateDoc, deleteDoc, setDoc, addDoc, query, orderBy } from '@angular/fire/firestore';
-import { FirebaseApp } from '@angular/fire/app';
-
-// Importaciones estándar de Firebase (Para la Instancia Secundaria)
-import { initializeApp, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 import * as L from 'leaflet';
 import { ToastService } from '../toast/toast.service';
 import { COLONIAS_TONALA } from '../onboarding/onboarding.component';
 
-// Función validadora personalizada para verificar que solo haya letras
+import emailjs from '@emailjs/browser';
+
 function soloLetras(control: AbstractControl): ValidationErrors | null {
   const val = control.value || '';
   return /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/.test(val) ? null : { soloLetras: true };
@@ -30,30 +25,32 @@ function soloLetras(control: AbstractControl): ValidationErrors | null {
   styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit, OnDestroy {
-  private auth        = inject(Auth);
-  private firestore   = inject(Firestore);
-  private fb          = inject(FormBuilder);
-  private toast       = inject(ToastService);
-  private firebaseApp = inject(FirebaseApp); // Inyección de la App de Firebase
+  private auth      = inject(Auth);
+  private firestore = inject(Firestore);
+  private fb        = inject(FormBuilder);
+  private toast     = inject(ToastService);
 
   seccionActiva = 'usuarios';
   colonias      = COLONIAS_TONALA;
 
-  usuarios: any[]     = [];
+  usuarios: any[]    = [];
   recolectores: any[] = [];
-  fechas: any[]       = [];
-  pagos: any[]        = [];
-  solicitudes: any[]  = [];
-  camiones: any[]     = [];
+  fechas: any[]      = [];
+  pagos: any[]       = [];
+  solicitudes: any[] = [];
+  camiones: any[]    = [];
 
   cargando = false;
 
-  // Método para bloquear físicamente números y símbolos en el HTML
+  // ── EmailJS ───────────────────────────────────────────
+  private emailjsServiceId  = 'service_k94jyol';
+  private emailjsAprobadoId = 'template_dr4fkjj';
+  private emailjsDenegadoId = 'template_gab6d54';
+  private emailjsPublicKey  = 'A0deu2jst5GoehcRk';
+
   validarSoloLetras(event: KeyboardEvent) {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$/;
-    if (event.key.length === 1 && !regex.test(event.key)) {
-      event.preventDefault();
-    }
+    if (event.key.length === 1 && !regex.test(event.key)) event.preventDefault();
   }
 
   // ── Forms ─────────────────────────────────────────────
@@ -76,28 +73,26 @@ export class AdminComponent implements OnInit, OnDestroy {
   });
 
   formCamion: FormGroup = this.fb.group({
-    placa:            ['', Validators.required],
-    modelo:           ['', Validators.required],
-    estado:           ['apagado', Validators.required],
-    recolectorId:     [''],
-    pesoActual:       [0, [Validators.required, Validators.min(0)]],
-    contenedorLleno:  [false, Validators.required]
+    placa:           ['', Validators.required],
+    modelo:          ['', Validators.required],
+    estado:          ['apagado', Validators.required],
+    recolectorId:    [''],
+    pesoActual:      [0, [Validators.required, Validators.min(0)]],
+    contenedorLleno: [false, Validators.required]
   });
 
-  editandoFecha:   any = null;
-  editandoCamion:  any = null;
-  montoActual          = 0;
+  editandoFecha:  any = null;
+  editandoCamion: any = null;
+  montoActual         = 0;
 
-  // ── Modal aprobación recolector ───────────────────────
+  // ── Modal aprobación ──────────────────────────────────
   modalSolicitud: any = null;
-  passwordTemporal    = '';
-  passwordError       = '';
   aprobando           = false;
 
   // ── Mapa ──────────────────────────────────────────────
   private mapa!: L.Map;
   private capaMarcadores!: L.LayerGroup;
-  mapaListo         = false;
+  mapaListo          = false;
   usuariosGeo: any[] = [];
   casaSeleccionada: any = null;
 
@@ -138,7 +133,10 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.auth.onAuthStateChanged(async user => {
       if (!user) { window.location.href = '/login'; return; }
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      if (!snap.exists() || snap.data()['rol'] !== 'admin') { window.location.href = '/dashboard'; return; }
+      if (!snap.exists() || snap.data()['rol'] !== 'admin') {
+        window.location.href = '/dashboard';
+        return;
+      }
       this.cargarDatos();
     });
   }
@@ -280,82 +278,87 @@ export class AdminComponent implements OnInit, OnDestroy {
   }
 
   // ── Solicitudes ───────────────────────────────────────
-  abrirModalAprobar(solicitud: any) {
-    this.modalSolicitud   = solicitud;
-    this.passwordTemporal = '';
-    this.passwordError    = '';
-  }
-
-  cerrarModal() {
-    this.modalSolicitud   = null;
-    this.passwordTemporal = '';
-    this.passwordError    = '';
-  }
+  abrirModalAprobar(solicitud: any) { this.modalSolicitud = solicitud; }
+  cerrarModal() { this.modalSolicitud = null; }
 
   async aprobarSolicitud() {
-    if (!this.passwordTemporal || this.passwordTemporal.length < 6) {
-      this.passwordError = 'Mínimo 6 caracteres.';
-      return;
-    }
     this.aprobando = true;
     const s = this.modalSolicitud;
 
-    // 1. Crear una instancia de Firebase aislada temporal para no cerrar la sesión del admin
-    const appSecundaria = initializeApp(this.firebaseApp.options, 'AppSecundaria' + Date.now());
-    const authSecundario = getAuth(appSecundaria);
-
     try {
-      // 2. Crear al recolector en la app secundaria
-      const credencial = await createUserWithEmailAndPassword(authSecundario, s.email, this.passwordTemporal);
-      
-      // 3. Enviar correo de restablecimiento de contraseña en lugar de verificación simple
-      await sendPasswordResetEmail(authSecundario, s.email);
-
-      // Usamos s.zona si existe (por el cambio en el select) o s.colonia como respaldo
       const coloniaFinal = s.zona || s.colonia || '';
 
-      // 4. Escribir en Firestore usando la sesión principal del Admin
-      await setDoc(doc(this.firestore, 'usuarios', credencial.user.uid), {
-        nombre: s.nombre, telefono: s.telefono, email: s.email,
-        colonia: coloniaFinal, licencia: s.licencia,
-        rol: 'recolector', activo: true, perfilCompleto: true, creadoEn: new Date()
-      });
-      
+      // 1. Crear documento en 'recolectores' para que aparezca en el panel
+      //    inmediatamente, antes de que el recolector haga su primer login
       await addDoc(collection(this.firestore, 'recolectores'), {
-        uid: credencial.user.uid, nombre: s.nombre, telefono: s.telefono,
-        email: s.email, colonia: coloniaFinal, activo: true, creadoEn: new Date()
+        nombre:      s.nombre,
+        email:       s.email,
+        telefono:    s.telefono || '',
+        colonia:     coloniaFinal,
+        activo:      true,
+        creadoEn:    new Date(),
+        solicitudId: s.id
       });
-      
-      await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), { estado: 'aprobada' });
-      
-      this.cerrarModal();
-      this.toast.ok(`${s.nombre} aprobado. Se le envió un correo oficial para que asigne su propia contraseña.`);
 
-      // 5. Refrescar listas sin recargar la página
-      await this.cargarSolicitudes();
-      await this.cargarRecolectores();
+      // 2. Marcar solicitud como aprobada
+      await updateDoc(doc(this.firestore, 'solicitudesRecolector', s.id), {
+        estado:     'aprobada',
+        aprobadoEn: new Date()
+      });
+
+      // 3. Correo personalizado de bienvenida vía EmailJS
+      //    Firebase Auth mandará su propio correo de verificación por separado
+      await emailjs.send(
+        this.emailjsServiceId,
+        this.emailjsAprobadoId,
+        {
+          nombre: s.nombre,
+          zona:   coloniaFinal,
+          email:  s.email
+        },
+        this.emailjsPublicKey
+      );
+
+      this.toast.ok(`Aprobado. Correo de bienvenida enviado a ${s.email}.`);
+      this.cerrarModal();
+      await Promise.all([this.cargarSolicitudes(), this.cargarRecolectores()]);
 
     } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        this.toast.error('Este correo ya tiene una cuenta registrada.');
-      } else {
-        this.toast.error('Error al crear la cuenta. Intenta de nuevo.');
-      }
+      console.error('Error al aprobar solicitud:', error);
+      this.toast.error('Error al aprobar la solicitud. Revisa la consola.');
     } finally {
       this.aprobando = false;
-      // Destruir la instancia secundaria para liberar memoria
-      await deleteApp(appSecundaria);
     }
   }
 
   async declinarSolicitud(id: string) {
-    const ok = await this.toast.confirmar('¿Declinar esta solicitud?');
+    const s = this.solicitudes.find(sol => sol.id === id);
+    if (!s) return;
+
+    const ok = await this.toast.confirmar(`¿Declinar la solicitud de ${s.nombre}?`);
     if (!ok) return;
+
     try {
-      await updateDoc(doc(this.firestore, 'solicitudesRecolector', id), { estado: 'declinada' });
-      this.toast.ok('Solicitud declinada.');
+      // Conservar historial marcando como declinada
+      await updateDoc(doc(this.firestore, 'solicitudesRecolector', id), {
+        estado:      'declinada',
+        declinadoEn: new Date()
+      });
+
+      const coloniaFinal = s.zona || s.colonia || '';
+      await emailjs.send(
+        this.emailjsServiceId,
+        this.emailjsDenegadoId,
+        { nombre: s.nombre, zona: coloniaFinal, email: s.email },
+        this.emailjsPublicKey
+      );
+
+      this.toast.ok('Solicitud declinada y correo enviado.');
       await this.cargarSolicitudes();
-    } catch { this.toast.error('Error al declinar la solicitud.'); }
+    } catch (error) {
+      this.toast.error('Error al declinar la solicitud.');
+      console.error(error);
+    }
   }
 
   // ── Recolectores ──────────────────────────────────────
@@ -428,13 +431,13 @@ export class AdminComponent implements OnInit, OnDestroy {
     if (this.formCamion.invalid) { this.formCamion.markAllAsTouched(); return; }
     this.cargando = true;
     const datos = {
-      placa:           this.formCamion.value.placa.toUpperCase().trim(),
-      modelo:          this.formCamion.value.modelo.trim(),
-      estado:          this.formCamion.value.estado,
-      recolectorId:    this.formCamion.value.recolectorId || '',
-      pesoActual:      Number(this.formCamion.value.pesoActual),
-      contenedorLleno: this.formCamion.value.contenedorLleno === true ||
-                       this.formCamion.value.contenedorLleno === 'true',
+      placa:               this.formCamion.value.placa.toUpperCase().trim(),
+      modelo:              this.formCamion.value.modelo.trim(),
+      estado:              this.formCamion.value.estado,
+      recolectorId:        this.formCamion.value.recolectorId || '',
+      pesoActual:          Number(this.formCamion.value.pesoActual),
+      contenedorLleno:     this.formCamion.value.contenedorLleno === true ||
+                           this.formCamion.value.contenedorLleno === 'true',
       ultimaActualizacion: new Date()
     };
     try {

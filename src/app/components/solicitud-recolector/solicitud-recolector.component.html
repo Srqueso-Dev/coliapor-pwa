@@ -30,7 +30,8 @@
           </div>
           <div class="form-group">
             <label>Teléfono</label>
-            <input formControlName="telefono" type="tel" placeholder="10 dígitos"
+            <input formControlName="telefono" type="tel" placeholder="10 dígitos" maxlength="10"
+              (keypress)="validarSoloNumeros($event)"
               [class.input-error]="form.get('telefono')?.invalid && form.get('telefono')?.touched">
             @if (form.get('telefono')?.invalid && form.get('telefono')?.touched) {
               <span class="error-msg">10 dígitos requeridos.</span>
