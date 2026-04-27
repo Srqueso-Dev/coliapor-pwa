@@ -2,8 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { Auth, signInWithEmailAndPassword, sendPasswordResetEmail } from '@angular/fire/auth';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, query, where, getDocs } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
+
+// Roles permitidos para acceder a las áreas privadas
+const ROLES_PERMITIDOS = ['admin', 'recolector', 'usuario'];
 
 @Component({
   selector: 'app-login',
@@ -36,20 +39,33 @@ export class LoginComponent implements OnInit {
     this.cargando = true;
     try {
       const userCredential = await signInWithEmailAndPassword(this.auth, email, pass);
-      const uid = userCredential.user.uid;
+      const uid       = userCredential.user.uid;
+      const userEmail = (userCredential.user.email || email).toLowerCase();
 
       // 1. Buscar primero en la colección principal de usuarios
       let docSnap = await getDoc(doc(this.firestore, 'usuarios', uid));
-      let data = docSnap.exists() ? docSnap.data() : null;
+      let data: any = docSnap.exists() ? docSnap.data() : null;
       let rol = data?.['rol'] || '';
 
-      // 2. Si no existe en usuarios, buscar en la colección de recolectores
+      // 2. Si no existe en usuarios, buscar en la colección de recolectores.
+      //    El admin crea recolectores con addDoc() (ID auto-generado), por lo
+      //    que NO se pueden buscar por UID — se buscan por email.
       if (!docSnap.exists()) {
-        const recSnap = await getDoc(doc(this.firestore, 'recolectores', uid));
-        if (recSnap.exists()) {
-          data = recSnap.data();
-          // Asignar el rol explícitamente para la redirección
-          rol = data?.['rol'] || 'recolector'; 
+        // 2a. Intento por UID (compatibilidad con docs antiguos)
+        const recPorUid = await getDoc(doc(this.firestore, 'recolectores', uid));
+        if (recPorUid.exists()) {
+          data = recPorUid.data();
+          rol  = data?.['rol'] || 'recolector';
+        } else {
+          // 2b. Búsqueda por email (caso real con addDoc)
+          const recQuery = await getDocs(query(
+            collection(this.firestore, 'recolectores'),
+            where('email', '==', userEmail)
+          ));
+          if (!recQuery.empty) {
+            data = recQuery.docs[0].data();
+            rol  = data?.['rol'] || 'recolector';
+          }
         }
       }
 
@@ -60,7 +76,12 @@ export class LoginComponent implements OnInit {
         return;
       }
 
-      // 4. Redirección basada en el rol detectado
+      // 4. Si el rol no está en la lista de roles permitidos, lo tratamos como usuario
+      if (rol && !ROLES_PERMITIDOS.includes(rol)) {
+        rol = 'usuario';
+      }
+
+      // 5. Redirección basada en el rol detectado
       if (rol === 'admin') {
         this.router.navigate(['/admin']);
       } else if (rol === 'recolector') {

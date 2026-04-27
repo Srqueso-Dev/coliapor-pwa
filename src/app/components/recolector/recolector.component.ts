@@ -35,14 +35,43 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       if (!user) { window.location.href = '/login'; return; }
       this.uid = user.uid;
 
+      let data: any = null;
+      let rol = '';
+
+      // 1. Intentar localizar al usuario en la colección 'usuarios'
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      if (!snap.exists()) { window.location.href = '/login'; return; }
+      if (snap.exists()) {
+        data = snap.data();
+        rol  = data['rol'] || '';
+      } else {
+        // 2. Fallback: buscar en 'recolectores' por email
+        //    (los recolectores se crean con addDoc, no comparten UID con Auth)
+        const userEmail = (user.email || '').toLowerCase();
+        if (userEmail) {
+          const recQuery = await getDocs(query(
+            collection(this.firestore, 'recolectores'),
+            where('email', '==', userEmail)
+          ));
+          if (!recQuery.empty) {
+            data = recQuery.docs[0].data();
+            rol  = data?.['rol'] || 'recolector';
+          }
+        }
+      }
 
-      const data = snap.data();
-      const rol = data['rol'] || '';
+      // Si la cuenta fue desactivada, sacarlo
+      if (data && data['activo'] === false) {
+        window.location.href = '/login?bloqueado=true';
+        return;
+      }
 
+      // Validación de rol — solo admin y recolector pueden ver esta vista
+      const ROLES_PERMITIDOS = ['admin', 'recolector'];
+      if (!data || !ROLES_PERMITIDOS.includes(rol)) {
+        window.location.href = '/dashboard';
+        return;
+      }
       if (rol === 'admin') { window.location.href = '/simulacion'; return; }
-      if (rol !== 'recolector') { window.location.href = '/dashboard'; return; }
 
       this.nombre  = data['nombre']  || '';
       this.colonia = data['colonia'] || '';
@@ -51,7 +80,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
         this.cargarCamion(user.uid),
         this.cargarRuta()
       ]);
-      
+
       this.cargando = false;
     });
   }

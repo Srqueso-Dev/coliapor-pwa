@@ -2,9 +2,12 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { Auth, signOut } from '@angular/fire/auth';
 import {
   Firestore, doc, getDoc,
-  collection, query, orderBy, getDocs,
+  collection, query, orderBy, where, getDocs,
   onSnapshot, Unsubscribe
 } from '@angular/fire/firestore';
+
+// Roles que pueden acceder al dashboard
+const ROLES_PERMITIDOS = ['admin', 'recolector', 'usuario'];
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -98,19 +101,51 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     try {
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
-      if (snap.exists()) {
-        const data = snap.data();
+      let data: any = null;
+      let rol = '';
 
+      if (snap.exists()) {
+        data = snap.data();
+        rol  = data['rol'] || 'usuario';
+      } else {
+        // Fallback: buscar en 'recolectores' por email
+        const userEmail = (user.email || '').toLowerCase();
+        if (userEmail) {
+          const recQuery = await getDocs(query(
+            collection(this.firestore, 'recolectores'),
+            where('email', '==', userEmail)
+          ));
+          if (!recQuery.empty) {
+            data = recQuery.docs[0].data();
+            rol  = data?.['rol'] || 'recolector';
+          }
+        }
+      }
+
+      if (data) {
         if (data['activo'] === false) {
           await signOut(this.auth);
           window.location.href = '/login?bloqueado=true';
           return;
         }
 
+        // Validación de rol: si el rol no está permitido, sacarlo al login
+        if (rol && !ROLES_PERMITIDOS.includes(rol)) {
+          await signOut(this.auth);
+          window.location.href = '/login';
+          return;
+        }
+
+        // Si es recolector, redirigir a su panel propio
+        if (rol === 'recolector') {
+          window.location.href = '/recolector';
+          return;
+        }
+
         this.nombreUsuario   = data['nombre'] || user.email || '';
-        this.esAdmin         = data['rol'] === 'admin';
+        this.esAdmin         = rol === 'admin';
         this.tieneMetodoPago = !!data['metodoPago'];
-        this.colonia         = data['domicilio']?.colonia || 'General';
+        this.colonia         = data['domicilio']?.colonia || data['colonia'] || 'General';
 
         const pagosMes = data['pagos'] || {};
         this.pagoMesPendiente = !pagosMes[this.clavesMes];
