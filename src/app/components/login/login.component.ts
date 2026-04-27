@@ -36,27 +36,31 @@ export class LoginComponent implements OnInit {
     this.cargando = true;
     try {
       const userCredential = await signInWithEmailAndPassword(this.auth, email, pass);
+      const uid = userCredential.user.uid;
 
-      // Si necesitas que verifiquen el correo antes de entrar, descomenta esto:
-      // if (!userCredential.user.emailVerified) {
-      //   this.toast.info('Debes verificar tu correo antes de iniciar sesión.');
-      //   await this.auth.signOut();
-      //   return;
-      // }
+      // 1. Buscar primero en la colección principal de usuarios
+      let docSnap = await getDoc(doc(this.firestore, 'usuarios', uid));
+      let data = docSnap.exists() ? docSnap.data() : null;
+      let rol = data?.['rol'] || '';
 
-      const uid     = userCredential.user.uid;
-      const docSnap = await getDoc(doc(this.firestore, 'usuarios', uid));
+      // 2. Si no existe en usuarios, buscar en la colección de recolectores
+      if (!docSnap.exists()) {
+        const recSnap = await getDoc(doc(this.firestore, 'recolectores', uid));
+        if (recSnap.exists()) {
+          data = recSnap.data();
+          // Asignar el rol explícitamente para la redirección
+          rol = data?.['rol'] || 'recolector'; 
+        }
+      }
 
-      if (docSnap.exists() && docSnap.data()['activo'] === false) {
+      // 3. Validar si la cuenta fue dada de baja (aplica para ambas colecciones)
+      if (data && data['activo'] === false) {
         await this.auth.signOut();
         this.mensajeBloqueado = 'Tu cuenta ha sido dada de baja. Contacta al administrador.';
         return;
       }
 
-      const data = docSnap.exists() ? docSnap.data() : null;
-      const rol  = data?.['rol'] || '';
-
-      // REDIRECCIÓN ARREGLADA (Usando Router de Angular para que sea instantáneo)
+      // 4. Redirección basada en el rol detectado
       if (rol === 'admin') {
         this.router.navigate(['/admin']);
       } else if (rol === 'recolector') {
