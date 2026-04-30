@@ -74,7 +74,7 @@ export class SimulacionComponent implements OnInit, OnDestroy {
       }
 
       this.nombre  = data['nombre']  || '';
-      this.colonia = data['colonia'] || '';
+      this.colonia = data['domicilio']?.colonia || data['colonia'] || '';
       this.simulacionColonia = this.colonia;
 
       await Promise.all([

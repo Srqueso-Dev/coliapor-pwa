@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { initializeApp } from 'firebase/app';
+import { getApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { environment } from '../../environments/environment';
 
@@ -10,8 +10,7 @@ export class NotificacionesService {
   private messaging: any;
 
   constructor() {
-    const app = initializeApp(environment.firebaseConfig);
-    this.messaging = getMessaging(app);
+    this.messaging = getMessaging(getApp());
   }
 
   solicitarPermiso() {
