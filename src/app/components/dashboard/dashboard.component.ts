@@ -5,12 +5,13 @@ import {
   collection, query, orderBy, where, getDocs,
   onSnapshot, Unsubscribe
 } from '@angular/fire/firestore';
-
-// Roles que pueden acceder al dashboard
-const ROLES_PERMITIDOS = ['admin', 'recolector', 'usuario'];
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+// 1. Importamos el Router de Angular
+import { RouterModule, Router } from '@angular/router'; 
+// 2. Importamos el servicio de notificaciones que creamos
+import { NotificacionesService } from '../../services/notificaciones.service';
 
+const ROLES_PERMITIDOS = ['admin', 'recolector', 'usuario'];
 const CACHE_DASHBOARD = 'coliapor_dashboard';
 
 @Component({
@@ -18,11 +19,13 @@ const CACHE_DASHBOARD = 'coliapor_dashboard';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css' // Corregí esto, en Angular 17+ es styleUrl o styleUrls
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  private auth      = inject(Auth);
-  private firestore = inject(Firestore);
+  private auth                  = inject(Auth);
+  private firestore             = inject(Firestore);
+  private router                = inject(Router); // Inyectamos el Router
+  private notificacionesService = inject(NotificacionesService); // Inyectamos el servicio
 
   nombreUsuario    = '';
   esAdmin          = false;
@@ -59,9 +62,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.cargarDesdeCache();
 
     this.auth.onAuthStateChanged(async user => {
-      if (!user) { window.location.href = '/login'; return; }
+      // Cambio: Usar this.router.navigate en lugar de window.location
+      if (!user) { this.router.navigate(['/login']); return; } 
+      
       await this.cargarDatos();
       this.suscribirChat();
+
+      // 3. ¡Activamos las notificaciones cuando ya sabemos que el usuario está logueado!
+      this.notificacionesService.solicitarPermiso();
+      this.notificacionesService.escucharMensajesActivos();
     });
   }
 
@@ -70,14 +79,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!raw) return;
     try {
       const data = JSON.parse(raw);
-      this.nombreUsuario   = data.nombreUsuario   || '';
-      this.esAdmin         = data.esAdmin         || false;
-      this.tieneMetodoPago = data.tieneMetodoPago || false;
+      this.nombreUsuario    = data.nombreUsuario   || '';
+      this.esAdmin          = data.esAdmin         || false;
+      this.tieneMetodoPago  = data.tieneMetodoPago || false;
       this.pagoMesPendiente = data.pagoMesPendiente ?? true;
-      this.montoMensual    = data.montoMensual    || 0;
-      this.proximaFecha    = data.proximaFecha    || '';
-      this.proximaHora     = data.proximaHora     || '';
-      this.colonia         = data.colonia         || '';
+      this.montoMensual     = data.montoMensual    || 0;
+      this.proximaFecha     = data.proximaFecha    || '';
+      this.proximaHora      = data.proximaHora     || '';
+      this.colonia          = data.colonia         || '';
     } catch (e) {}
   }
 
@@ -108,7 +117,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         data = snap.data();
         rol  = data['rol'] || 'usuario';
       } else {
-        // Fallback: buscar en 'recolectores' por email
         const userEmail = (user.email || '').toLowerCase();
         if (userEmail) {
           const recQuery = await getDocs(query(
@@ -125,20 +133,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (data) {
         if (data['activo'] === false) {
           await signOut(this.auth);
-          window.location.href = '/login?bloqueado=true';
+          // Cambio: Usar this.router.navigate
+          this.router.navigate(['/login'], { queryParams: { bloqueado: 'true' } });
           return;
         }
 
-        // Validación de rol: si el rol no está permitido, sacarlo al login
         if (rol && !ROLES_PERMITIDOS.includes(rol)) {
           await signOut(this.auth);
-          window.location.href = '/login';
+          this.router.navigate(['/login']); // Cambio
           return;
         }
 
-        // Si es recolector, redirigir a su panel propio
         if (rol === 'recolector') {
-          window.location.href = '/recolector';
+          this.router.navigate(['/recolector']); // Cambio crucial para que no recargue la página
           return;
         }
 
@@ -151,7 +158,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.pagoMesPendiente = !pagosMes[this.clavesMes];
       }
 
-      // Monto mensual
       const configSnap = await getDoc(doc(this.firestore, 'configuracion', 'pagos'));
       if (configSnap.exists()) {
         this.montoMensual = configSnap.data()['montoMensual'] || 0;
@@ -199,10 +205,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   async cerrarSesion() {
     await signOut(this.auth);
-    window.location.href = '/login';
+    this.router.navigate(['/login']); // Cambio
   }
 
   ngOnDestroy() {
     if (this.unsubChat) this.unsubChat();
   }
-} 
+}

@@ -1,9 +1,10 @@
 import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router'; // <-- Router importado
 import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, collection, query, where, getDocs, onSnapshot, updateDoc } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
+import { NotificacionesService } from '../../services/notificaciones.service'; // <-- Servicio importado
 
 @Component({
   selector: 'app-recolector',
@@ -13,9 +14,11 @@ import { ToastService } from '../toast/toast.service';
   styleUrl: './recolector.component.css'
 })
 export class RecolectorComponent implements OnInit, OnDestroy {
-  private auth      = inject(Auth);
-  private firestore = inject(Firestore);
-  private toast     = inject(ToastService);
+  private auth                  = inject(Auth);
+  private firestore             = inject(Firestore);
+  private toast                 = inject(ToastService);
+  private router                = inject(Router); // <-- Inyectamos Router
+  private notificacionesService = inject(NotificacionesService); // <-- Inyectamos Notificaciones
 
   nombre   = '';
   colonia  = '';
@@ -32,7 +35,7 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.auth.onAuthStateChanged(async user => {
-      if (!user) { window.location.href = '/login'; return; }
+      if (!user) { this.router.navigate(['/login']); return; } // <-- Navegación SPA
       this.uid = user.uid;
 
       let data: any = null;
@@ -61,17 +64,17 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
       // Si la cuenta fue desactivada, sacarlo
       if (data && data['activo'] === false) {
-        window.location.href = '/login?bloqueado=true';
+        this.router.navigate(['/login'], { queryParams: { bloqueado: 'true' } }); // <-- Navegación con parámetros
         return;
       }
 
       // Validación de rol — solo admin y recolector pueden ver esta vista
       const ROLES_PERMITIDOS = ['admin', 'recolector'];
       if (!data || !ROLES_PERMITIDOS.includes(rol)) {
-        window.location.href = '/dashboard';
+        this.router.navigate(['/dashboard']); // <-- Navegación SPA
         return;
       }
-      if (rol === 'admin') { window.location.href = '/simulacion'; return; }
+      if (rol === 'admin') { this.router.navigate(['/simulacion']); return; } // <-- Navegación SPA
 
       this.nombre  = data['nombre']  || '';
       this.colonia = data['colonia'] || '';
@@ -82,6 +85,10 @@ export class RecolectorComponent implements OnInit, OnDestroy {
       ]);
 
       this.cargando = false;
+
+      // 3. ¡Activamos las notificaciones una vez que el perfil cargó!
+      this.notificacionesService.solicitarPermiso();
+      this.notificacionesService.escucharMensajesActivos();
     });
   }
 
@@ -167,6 +174,6 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     const ok = await this.toast.confirmar('¿Terminar turno y salir?');
     if (!ok) return;
     await signOut(this.auth);
-    window.location.href = '/login';
+    this.router.navigate(['/login']); // <-- Navegación SPA
   }
 }
