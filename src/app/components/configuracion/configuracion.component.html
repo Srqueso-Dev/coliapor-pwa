@@ -72,10 +72,14 @@
           </div>
           <div>
             <p class="setting-label">Avisos de recolección</p>
-            <p class="setting-desc">Próximamente disponible</p>
+            <p class="setting-desc">
+              {{ notificacionesActivas ? 'Activadas' : 'Desactivadas' }}
+              {{ togglingNotif ? '— Procesando...' : '' }}
+            </p>
           </div>
         </div>
-        <button class="toggle off" disabled>
+        <button class="toggle" [class.on]="notificacionesActivas" [disabled]="togglingNotif"
+                (click)="toggleNotificaciones()">
           <span class="toggle-thumb"></span>
         </button>
       </div>

@@ -5,6 +5,7 @@ import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc, collection, getDocs, query, where } from '@angular/fire/firestore';
 import { loadStripe, Stripe, StripeCardElement } from '@stripe/stripe-js';
 import { ToastService } from '../toast/toast.service';
+import { NotificacionesService } from '../../services/notificaciones.service';
 
 @Component({
   selector: 'app-configuracion',
@@ -17,12 +18,15 @@ export class ConfiguracionComponent implements OnInit {
   private auth      = inject(Auth);
   private firestore = inject(Firestore);
   private toast     = inject(ToastService);
+  private notifSvc  = inject(NotificacionesService);
 
-  temaClaro    = false;
-  tipoUsuario  = '';
-  uid          = '';
-  domicilio: any = null;
-  metodoPago: any = null;
+  temaClaro            = false;
+  tipoUsuario          = '';
+  uid                  = '';
+  domicilio: any       = null;
+  metodoPago: any      = null;
+  notificacionesActivas = false;
+  togglingNotif        = false;
 
   // Modal cambio de rol
   modalRolVisible  = false;
@@ -44,11 +48,36 @@ export class ConfiguracionComponent implements OnInit {
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
       if (snap.exists()) {
         const data = snap.data();
-        this.tipoUsuario = data['tipoUsuario'] || 'residente';
-        this.domicilio   = data['domicilio']   || null;
-        this.metodoPago  = data['metodoPago']  || null;
+        this.tipoUsuario          = data['tipoUsuario']          || 'residente';
+        this.domicilio            = data['domicilio']            || null;
+        this.metodoPago           = data['metodoPago']           || null;
+        this.notificacionesActivas = data['notificacionesActivas'] === true;
       }
     });
+  }
+
+  async toggleNotificaciones() {
+    if (this.togglingNotif) return;
+    this.togglingNotif = true;
+    try {
+      if (this.notificacionesActivas) {
+        await this.notifSvc.desactivar(this.uid);
+        this.notificacionesActivas = false;
+        this.toast.info('Notificaciones desactivadas.');
+      } else {
+        const ok = await this.notifSvc.activar(this.uid);
+        if (ok) {
+          this.notificacionesActivas = true;
+          this.toast.ok('Notificaciones activadas.');
+        } else {
+          this.toast.error('No se pudo activar. Revisa los permisos del navegador.');
+        }
+      }
+    } catch {
+      this.toast.error('Error al cambiar las notificaciones.');
+    } finally {
+      this.togglingNotif = false;
+    }
   }
 
   toggleTema() {

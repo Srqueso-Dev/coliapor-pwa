@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router'; // <-- Router importado
 import { Auth, signOut } from '@angular/fire/auth';
-import { Firestore, doc, getDoc, collection, query, where, getDocs, onSnapshot, updateDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, query, where, getDocs, onSnapshot, updateDoc, addDoc, serverTimestamp } from '@angular/fire/firestore';
 import { ToastService } from '../toast/toast.service';
 import { NotificacionesService } from '../../services/notificaciones.service'; // <-- Servicio importado
 
@@ -125,6 +125,26 @@ export class RecolectorComponent implements OnInit, OnDestroy {
     if (!this.camion) return;
     try {
       await updateDoc(doc(this.firestore, 'camiones', this.camion.id), { estado });
+
+      const titulos: Record<string, string> = {
+        'Aviso de tráfico/retraso enviado': 'Retraso en recolección',
+        'Aviso de pausa enviado':           'Pausa en recolección',
+        'Aviso de camión lleno enviado':    'Camión lleno'
+      };
+      const cuerpos: Record<string, string> = {
+        'Aviso de tráfico/retraso enviado': 'El recolector reporta tráfico o retraso en tu colonia.',
+        'Aviso de pausa enviado':           'El recolector está en pausa por el momento.',
+        'Aviso de camión lleno enviado':    'El camión está lleno y debe pasar a vaciarse.'
+      };
+      await addDoc(collection(this.firestore, 'avisos'), {
+        tipo:     'aviso_recolector',
+        colonia:  this.colonia,
+        titulo:   titulos[mensaje]  || mensaje,
+        cuerpo:   cuerpos[mensaje]  || '',
+        creadoEn: serverTimestamp(),
+        enviado:  false
+      });
+
       this.toast.info(mensaje);
     } catch {
       this.toast.error('Error al enviar reporte.');
@@ -160,12 +180,19 @@ export class RecolectorComponent implements OnInit, OnDestroy {
   async marcarRecolectado() {
     if (this.indiceParada < this.casasEnRuta.length - 1) {
       this.indiceParada++;
-      // Aquí en un futuro podrías guardar en Firestore que esta casa específica ya se recolectó
     } else {
       this.enRuta = false;
       if (this.camion) {
         await updateDoc(doc(this.firestore, 'camiones', this.camion.id), { estado: 'apagado' });
       }
+      await addDoc(collection(this.firestore, 'avisos'), {
+        tipo:     'recoleccion_completada',
+        colonia:  this.colonia,
+        titulo:   'Recolección completada',
+        cuerpo:   'El recolector ha completado la ruta de hoy en tu colonia.',
+        creadoEn: serverTimestamp(),
+        enviado:  false
+      });
       this.toast.ok('¡Has completado toda la colonia!');
     }
   }

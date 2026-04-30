@@ -105,7 +105,12 @@ export class PagosComponent implements OnInit {
       });
 
       await setDoc(doc(this.firestore, 'usuarios', this.uid), {
-        pagos: { [this.clavesMes]: { fecha: fechaStr, monto: this.montoMensual, estado: 'pagado' } }
+        pagos: { [this.clavesMes]: {
+          fecha:    fechaStr,
+          fechaISO: new Date().toISOString().split('T')[0],
+          monto:    this.montoMensual,
+          estado:   'pagado'
+        }}
       }, { merge: true });
 
       await addDoc(collection(this.firestore, 'pagos'), {
