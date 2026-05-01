@@ -50,12 +50,16 @@ export class LoginComponent implements OnInit {
       // 1b. Si el usuario existe en 'usuarios' pero sin rol privilegiado,
       //     puede haber sido aprobado como recolector después de registrarse.
       if (docSnap.exists() && rol !== 'admin' && rol !== 'recolector') {
-        const recQuery = await getDocs(query(
-          collection(this.firestore, 'recolectores'),
-          where('email', '==', userEmail)
-        ));
-        if (!recQuery.empty && recQuery.docs[0].data()['activo'] !== false) {
-          rol = 'recolector';
+        try {
+          const recQuery = await getDocs(query(
+            collection(this.firestore, 'recolectores'),
+            where('email', '==', userEmail)
+          ));
+          if (!recQuery.empty && recQuery.docs[0].data()['activo'] !== false) {
+            rol = 'recolector';
+          }
+        } catch {
+          // Sin permisos para leer 'recolectores'; el usuario sigue con su rol actual.
         }
       }
 

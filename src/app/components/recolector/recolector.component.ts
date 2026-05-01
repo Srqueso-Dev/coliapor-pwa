@@ -43,13 +43,29 @@ export class RecolectorComponent implements OnInit, OnDestroy {
 
       // 1. Intentar localizar al usuario en la colección 'usuarios'
       const snap = await getDoc(doc(this.firestore, 'usuarios', user.uid));
+      const userEmail = (user.email || '').toLowerCase();
+
       if (snap.exists()) {
         data = snap.data();
         rol  = data['rol'] || '';
+
+        // 1b. Si el rol en 'usuarios' no es privilegiado, verificar si fue
+        //     aprobado como recolector (su documento está en 'recolectores').
+        if (rol !== 'admin' && rol !== 'recolector' && userEmail) {
+          try {
+            const recQuery = await getDocs(query(
+              collection(this.firestore, 'recolectores'),
+              where('email', '==', userEmail)
+            ));
+            if (!recQuery.empty && recQuery.docs[0].data()['activo'] !== false) {
+              data = recQuery.docs[0].data();
+              rol  = 'recolector';
+            }
+          } catch {}
+        }
       } else {
         // 2. Fallback: buscar en 'recolectores' por email
         //    (los recolectores se crean con addDoc, no comparten UID con Auth)
-        const userEmail = (user.email || '').toLowerCase();
         if (userEmail) {
           const recQuery = await getDocs(query(
             collection(this.firestore, 'recolectores'),

@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+       // ── Helpers ───────────────────────────────────────────────────────────
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esPropio(uid) {
+      return autenticado() && request.auth.uid == uid;
+    }
+
+    function esAdmin() {
+      return autenticado() &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'admin';
+    }
+
+    function esTitular() {
+      return autenticado() &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoUsuario == 'titular';
+    }
+
+    // ── Usuarios ──────────────────────────────────────────────────────────
+    match /usuarios/{uid} {
+      allow read: if esPropio(uid) || esAdmin();
+
+      allow write: if esPropio(uid) &&
+        (!request.resource.data.keys().hasAny(['rol']) ||
+          request.resource.data.rol == resource.data.rol);
+
+      allow write: if esAdmin();
+
+      match /historialPagos/{pagoId} {
+        allow read, write: if esPropio(uid) || esAdmin();
+      }
+    }
+
+    // ── Recolectores ──────────────────────────────────────────────────────
+    // Los recolectores se crean con addDoc (ID aleatorio), por lo que el UID
+    // de Auth no coincide con el ID del documento. Se permite lectura al
+    // usuario autenticado cuyo email coincida con el campo email del documento.
+    match /recolectores/{id} {
+      allow read: if esAdmin() ||
+        (autenticado() && resource.data.email == request.auth.token.email);
+      allow write: if esAdmin();
+    }
+
+    // ── Fechas de recolección ─────────────────────────────────────────────
+    match /fechasRecoleccion/{id} {
+      allow read:  if autenticado();
+      allow write: if esAdmin();
+    }
+
+    // ── Configuración ─────────────────────────────────────────────────────
+    match /configuracion/{id} {
+      allow read:  if autenticado();
+      allow write: if esAdmin();
+    }
+
+    // ── Pagos globales ────────────────────────────────────────────────────
+    match /pagos/{id} {
+      allow read:   if autenticado() && (resource.data.uid == request.auth.uid || esAdmin());
+      allow create: if esTitular() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if esAdmin();
+    }
+
+    // ── Chat ──────────────────────────────────────────────────────────────
+    match /chat/{colonia}/mensajes/{mensajeId} {
+      allow read:   if autenticado();
+      allow create: if autenticado() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.texto.size() <= 300;
+      allow update, delete: if esAdmin();
+    }
+
+    // ── Camiones ──────────────────────────────────────────────────────────
+    match /camiones/{camionId} {
+      allow read: if request.auth != null &&
+        (get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol in ['admin', 'recolector'] ||
+         exists(/databases/$(database)/documents/recolectores/$(request.auth.uid)));
+      allow write: if false; // solo el ESP32 escribe via Admin SDK o REST
+    }
+
+    // ── Solicitudes Recolector ────────────────────────────────────────────
+    match /solicitudesRecolector/{id} {
+      allow create: if true; // público, sin login
+      allow read, update: if request.auth != null &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'admin';
+    }
+  }
+}
